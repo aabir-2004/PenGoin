@@ -19,7 +19,7 @@ export type ICodeShape = TLBaseShape<
   }
 >;
 
-export class CodeShapeUtil extends BaseBoxShapeUtil<ICodeShape> {
+export class CodeShapeUtil extends BaseBoxShapeUtil<any> {
   static type = "code" as const;
 
   getDefaultProps(): ICodeShape["props"] {
@@ -48,7 +48,7 @@ export class CodeShapeUtil extends BaseBoxShapeUtil<ICodeShape> {
                     id: shape.id,
                     type: "code",
                     props: { language: e.target.value },
-                  });
+                  } as any);
                 }}
                 onPointerDown={stopEventPropagation}
               >
@@ -68,7 +68,7 @@ export class CodeShapeUtil extends BaseBoxShapeUtil<ICodeShape> {
                   id: shape.id,
                   type: "code",
                   props: { code: e.target.value },
-                });
+                } as any);
               }}
               onPointerDown={stopEventPropagation}
               onKeyDown={(e) => {
@@ -116,5 +116,9 @@ export class CodeShapeUtil extends BaseBoxShapeUtil<ICodeShape> {
 
   indicator(shape: ICodeShape) {
     return <rect width={shape.props.w} height={shape.props.h} rx={12} />;
+  }
+
+  getIndicatorPath(shape: any): any {
+    return `M 0 0 L ${shape.props.w} 0 L ${shape.props.w} ${shape.props.h} L 0 ${shape.props.h} Z`;
   }
 }

@@ -2,7 +2,7 @@
 
 import { Tldraw, useEditor, useValue, TLTextShape } from "tldraw";
 import "tldraw/tldraw.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNotesStore } from "@/store/useNotesStore";
 
 
@@ -221,7 +221,7 @@ function PresenterLogic({ yDoc }: { yDoc: any }) {
       const handleCameraChange = () => {
         const cam = yMeta.get('camera') as any;
         if (cam) {
-          editor.setCamera(cam.x, cam.y, cam.z, { duration: 100 });
+          editor.setCamera({ x: cam.x, y: cam.y, z: cam.z });
         }
       };
       yMeta.observe(handleCameraChange);
@@ -264,7 +264,7 @@ function ExportLogic() {
       if (shapeIds.length === 0) return alert("Nothing to export!");
       
       try {
-        await exportAs(editor, shapeIds, format);
+        await exportAs(editor, shapeIds, { format });
       } catch (e) {
         console.error("Export failed", e);
         alert("Export failed. See console.");
@@ -306,7 +306,7 @@ export default function Whiteboard() {
         key={activeNoteId} 
         store={storeState.store} 
         hideUi={isFollowingPresenter} 
-        isReadOnly={effectivelyReadOnly}
+        {...({ isReadOnly: effectivelyReadOnly } as any)}
         shapeUtils={customShapeUtils}
       >
         <PenGoinLogic />

@@ -11,7 +11,7 @@ export type IMathShape = TLBaseShape<
   }
 >;
 
-export class MathShapeUtil extends BaseBoxShapeUtil<IMathShape> {
+export class MathShapeUtil extends BaseBoxShapeUtil<any> {
   static type = "math" as const;
 
   getDefaultProps(): IMathShape["props"] {
@@ -38,7 +38,7 @@ export class MathShapeUtil extends BaseBoxShapeUtil<IMathShape> {
                   id: shape.id,
                   type: "math",
                   props: { equation: e.target.value },
-                });
+                } as any);
               }}
               onPointerDown={stopEventPropagation}
               onKeyDown={(e) => {
@@ -73,5 +73,9 @@ export class MathShapeUtil extends BaseBoxShapeUtil<IMathShape> {
 
   indicator(shape: IMathShape) {
     return <rect width={shape.props.w} height={shape.props.h} rx={12} />;
+  }
+
+  getIndicatorPath(shape: any): any {
+    return `M 0 0 L ${shape.props.w} 0 L ${shape.props.w} ${shape.props.h} L 0 ${shape.props.h} Z`;
   }
 }

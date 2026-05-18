@@ -95,7 +95,7 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
       provider.destroy();
       yDoc.destroy();
     };
-  }, [roomId, hostUrl, store]);
+  }, [roomId, defaultHostUrl, store]);
 
   return storeWithStatus;
 }

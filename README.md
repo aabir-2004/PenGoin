@@ -1,3 +1,12 @@
+---
+title: Pengoin Backend
+emoji: 🐧
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # 🐧 PenGoin
 
 > A real-time collaborative document & whiteboard editor — rich text, math, code, and drawing, all in one place.

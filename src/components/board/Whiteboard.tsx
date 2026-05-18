@@ -41,7 +41,7 @@ function PenGoinLogic() {
                  x: next.x,
                  y: next.y,
                  props: { equation: "\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}" }
-             });
+             } as any);
              editor.setEditingShape(newId);
              editor.select(newId);
              continue; 
@@ -57,7 +57,7 @@ function PenGoinLogic() {
                  x: next.x,
                  y: next.y,
                  props: { code: "function helloWorld() {\n  console.log('Hello from PenGoin!');\n}", language: "javascript" }
-             });
+             } as any);
              editor.setEditingShape(newId);
              editor.select(newId);
              continue; 

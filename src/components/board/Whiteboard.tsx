@@ -284,7 +284,7 @@ export default function Whiteboard() {
 
   const storeState = useYjsStore({
     roomId: activeNoteId || "default",
-    hostUrl: typeof window !== 'undefined' ? `ws://${window.location.hostname}:1234` : "ws://localhost:1234",
+    hostUrl: process.env.NEXT_PUBLIC_WEBSOCKET_URL || (typeof window !== 'undefined' ? `ws://${window.location.hostname}:1234` : "ws://localhost:1234"),
   });
 
   if (!activeNoteId) return null;

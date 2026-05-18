@@ -45,8 +45,8 @@ if (process.env.REDIS_URL) {
       new Redis({
         host: redisUrl.hostname,
         port: parseInt(redisUrl.port, 10) || 6379,
-        password: redisUrl.password,
         options: {
+          password: redisUrl.password,
           tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
         }
       })

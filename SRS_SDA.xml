@@ -1,0 +1,687 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TechnicalTeachingPlatform>
+
+  
+
+    <ExecutiveSummary>
+        <ProjectVision>
+            A web-based technical teaching platform optimized for realtime
+            technical instruction, collaborative whiteboarding, stylus input,
+            presentation synchronization, LaTeX rendering, and export-driven workflows.
+        </ProjectVision>
+
+        <PrimaryTeachingDomains>
+            <Domain>RAG Pipelines</Domain>
+            <Domain>CRDT Systems</Domain>
+            <Domain>Data Ingestion</Domain>
+            <Domain>Distributed Systems</Domain>
+            <Domain>System Design</Domain>
+            <Domain>Mathematics</Domain>
+            <Domain>AI Workflows</Domain>
+        </PrimaryTeachingDomains>
+    </ExecutiveSummary>
+
+    <ProductGoals>
+        <Goal id="G1">
+            <Title>Unified Teaching Environment</Title>
+            <Description>
+                Combine whiteboarding, technical notation rendering,
+                presenting, annotation, and exporting into a single platform.
+            </Description>
+        </Goal>
+
+        <Goal id="G2">
+            <Title>Realtime Device Synchronization</Title>
+            <Description>
+                Enable iPad drawing input and MacBook presenter synchronization.
+            </Description>
+        </Goal>
+
+        <Goal id="G3">
+            <Title>Low Infrastructure Cost</Title>
+            <Description>
+                Maintain near-zero operational costs during early deployment.
+            </Description>
+        </Goal>
+
+        <Goal id="G4">
+            <Title>Technical Workflow Optimization</Title>
+            <Description>
+                Prioritize technical education workflows over generic collaboration.
+            </Description>
+        </Goal>
+
+        <Goal id="G5">
+            <Title>Export-Centric Workflow</Title>
+            <Description>
+                Enable PDF exports, session continuity, and structured note generation.
+            </Description>
+        </Goal>
+    </ProductGoals>
+
+    <Scope>
+
+        <InScope>
+            <WhiteboardFeatures>
+                <Feature>Infinite Canvas</Feature>
+                <Feature>Stylus Support</Feature>
+                <Feature>Shape Tools</Feature>
+                <Feature>Zoom and Pan</Feature>
+                <Feature>Layer Management</Feature>
+                <Feature>Multi-page Boards</Feature>
+            </WhiteboardFeatures>
+
+            <SynchronizationFeatures>
+                <Feature>Realtime Collaboration</Feature>
+                <Feature>Session Recovery</Feature>
+                <Feature>Persistent Board State</Feature>
+                <Feature>Presence Awareness</Feature>
+            </SynchronizationFeatures>
+
+            <TechnicalFeatures>
+                <Feature>LaTeX Rendering</Feature>
+                <Feature>Code Blocks</Feature>
+                <Feature>PDF Annotation</Feature>
+                <Feature>Technical Exports</Feature>
+                            <Feature>Graph Recognition and Beautification</Feature>
+                <Feature>Handwriting-to-Formatted Text Conversion</Feature>
+                <Feature>Interactive Chart Embedding</Feature>
+            </TechnicalFeatures>
+
+            <ExportFeatures>
+                <Feature>PDF Export</Feature>
+                <Feature>PNG Export</Feature>
+                <Feature>Session Snapshot Export</Feature>
+            </ExportFeatures>
+        </InScope>
+
+        <OutOfScope>
+            <Feature>Video Conferencing</Feature>
+            <Feature>Voice Chat</Feature>
+            <Feature>Social Feeds</Feature>
+            <Feature>Payment Systems</Feature>
+            <Feature>Large-scale Cloud Storage</Feature>
+            <Feature>AI Tutoring</Feature>
+            <Feature>Native Mobile Applications</Feature>
+        </OutOfScope>
+
+    </Scope>
+
+    <Stakeholders>
+        <Stakeholder>
+            <Role>Teacher</Role>
+            <Responsibility>Creates and conducts sessions</Responsibility>
+        </Stakeholder>
+
+        <Stakeholder>
+            <Role>Students</Role>
+            <Responsibility>Consume sessions and view synchronized boards</Responsibility>
+        </Stakeholder>
+
+        <Stakeholder>
+            <Role>Administrator</Role>
+            <Responsibility>Maintains infrastructure and deployments</Responsibility>
+        </Stakeholder>
+    </Stakeholders>
+
+    <UserPersonas>
+        <Persona id="P1">
+            <Name>Technical Educator</Name>
+
+            <Characteristics>
+                <Item>Uses iPad with stylus</Item>
+                <Item>Explains technical systems visually</Item>
+                <Item>Requires fast teaching workflows</Item>
+                <Item>Uses diagrams and equations frequently</Item>
+            </Characteristics>
+
+            <PainPoints>
+                <Item>Disconnected applications</Item>
+                <Item>Screen-sharing latency</Item>
+                <Item>Poor tablet optimization</Item>
+                <Item>Workflow interruptions</Item>
+            </PainPoints>
+        </Persona>
+    </UserPersonas>
+
+    <FunctionalRequirements>
+
+        <AuthenticationModule>
+            <Requirement id="FR-1">
+                Guest users shall be able to join viewer sessions via invite links.
+            </Requirement>
+
+            <Requirement id="FR-2">
+                The system shall support secure teacher authentication.
+            </Requirement>
+
+            <Requirement id="FR-3">
+                The system shall persist teacher workspace state.
+            </Requirement>
+        </AuthenticationModule>
+
+        <WhiteboardModule>
+            <Requirement id="FR-4">Provide infinite canvas support.</Requirement>
+            <Requirement id="FR-5">Support Apple Pencil input.</Requirement>
+            <Requirement id="FR-6">Provide drawing tools.</Requirement>
+            <Requirement id="FR-7">Persist board objects.</Requirement>
+            <Requirement id="FR-8">Support multiple board pages.</Requirement>
+            <Requirement id="FR-9">Allow object transformations.</Requirement>
+        </WhiteboardModule>
+
+        <SynchronizationModule>
+            <Requirement id="FR-10">Synchronize board state in realtime.</Requirement>
+            <Requirement id="FR-11">Support conflict-free synchronization.</Requirement>
+            <Requirement id="FR-12">Restore sessions after reconnect.</Requirement>
+            <Requirement id="FR-13">Display collaborator presence.</Requirement>
+        </SynchronizationModule>
+
+        <PresentationModule>
+            <Requirement id="FR-14">Provide presenter mode.</Requirement>
+            <Requirement id="FR-15">Support camera following.</Requirement>
+            <Requirement id="FR-16">Hide editing controls during presentation.</Requirement>
+        </PresentationModule>
+
+        <ChartAndGraphModule>
+            <Requirement id="FR-27">
+                The system shall allow users to draw rough graphs and charts using stylus input.
+            </Requirement>
+
+            <Requirement id="FR-28">
+                The system shall detect graph-like structures from handwritten input.
+            </Requirement>
+
+            <Requirement id="FR-29">
+                The system shall provide an optional "Enhance" button to beautify graphs and charts.
+            </Requirement>
+
+            <Requirement id="FR-30">
+                The system shall convert rough sketches into clean rendered visualizations.
+            </Requirement>
+
+            <Requirement id="FR-31">
+                The system shall support embedding bar charts, line charts, pie charts, flow diagrams, and node graphs.
+            </Requirement>
+        </ChartAndGraphModule>
+
+        <HandwritingConversionModule>
+            <Requirement id="FR-32">
+                The system shall convert handwritten stylus input into formatted digital text.
+            </Requirement>
+
+            <Requirement id="FR-33">
+                The system shall preserve the original handwritten stroke layer during conversion.
+            </Requirement>
+
+            <Requirement id="FR-34">
+                The system shall allow smooth switching between keyboard typing and stylus writing.
+            </Requirement>
+
+            <Requirement id="FR-35">
+                The system shall support editable converted text blocks.
+            </Requirement>
+
+            <Requirement id="FR-36">
+                The system shall provide optional beautification instead of automatic forced conversion.
+            </Requirement>
+        </HandwritingConversionModule>
+
+        <LatexModule>
+            <Requirement id="FR-17">Render LaTeX equations.</Requirement>
+            <Requirement id="FR-18">Allow inline equation blocks.</Requirement>
+            <Requirement id="FR-19">Support slash-command equation insertion.</Requirement>
+        </LatexModule>
+
+        <ExportModule>
+            <Requirement id="FR-20">Export sessions as PDFs.</Requirement>
+            <Requirement id="FR-21">Export canvas as PNG.</Requirement>
+            <Requirement id="FR-22">Support multi-page exports.</Requirement>
+        </ExportModule>
+
+        <PDFAnnotationModule>
+            <Requirement id="FR-23">Allow PDF imports.</Requirement>
+            <Requirement id="FR-24">Allow PDF annotation.</Requirement>
+        </PDFAnnotationModule>
+
+        <CodeBlockModule>
+            <Requirement id="FR-25">Provide syntax highlighting.</Requirement>
+            <Requirement id="FR-26">Support multiple programming languages.</Requirement>
+        </CodeBlockModule>
+
+    </FunctionalRequirements>
+
+    <NonFunctionalRequirements>
+
+        <PerformanceRequirements>
+            <Metric>
+                <Name>Initial Load Time</Name>
+                <Target>&lt; 3 seconds</Target>
+            </Metric>
+
+            <Metric>
+                <Name>Sync Latency</Name>
+                <Target>&lt; 150ms</Target>
+            </Metric>
+
+            <Metric>
+                <Name>Canvas Interaction Latency</Name>
+                <Target>&lt; 16ms</Target>
+            </Metric>
+        </PerformanceRequirements>
+
+        <ScalabilityRequirements>
+            <Item>1 active teacher</Item>
+            <Item>10-100 concurrent viewers</Item>
+            <Item>Multiple simultaneous sessions</Item>
+        </ScalabilityRequirements>
+
+        <ReliabilityRequirements>
+            <Item>Graceful reconnect handling</Item>
+            <Item>Automatic persistence</Item>
+            <Item>Crash recovery</Item>
+        </ReliabilityRequirements>
+
+        <SecurityRequirements>
+            <Item>HTTPS communication</Item>
+            <Item>Secure WebSockets</Item>
+            <Item>Permission validation</Item>
+            <Item>Restricted board modification</Item>
+        </SecurityRequirements>
+
+    </NonFunctionalRequirements>
+
+    <VisualizationEngine>
+        <ChartLibraries>
+            <Library>Recharts</Library>
+            <Library>D3.js</Library>
+            <Library>Mermaid.js</Library>
+        </ChartLibraries>
+
+        <RecognitionPipeline>
+            <Component>Shape Recognition Engine</Component>
+            <Component>Graph Structure Detection</Component>
+            <Component>Handwriting Parsing Engine</Component>
+        </RecognitionPipeline>
+    </VisualizationEngine>
+
+    <TechnologyStack>
+        <Frontend>
+            <Framework>Next.js</Framework>
+            <Language>TypeScript</Language>
+            <Styling>Tailwind CSS</Styling>
+        </Frontend>
+
+        <Whiteboard>
+            <Engine>tldraw</Engine>
+        </Whiteboard>
+
+        <Realtime>
+            <CRDT>Yjs</CRDT>
+            <SyncServer>Hocuspocus</SyncServer>
+            <Transport>WebSockets</Transport>
+        </Realtime>
+
+        <Database>
+            <Provider>Supabase PostgreSQL</Provider>
+        </Database>
+
+        <Rendering>
+            <EquationRenderer>KaTeX</EquationRenderer>
+            <PDFRenderer>jsPDF</PDFRenderer>
+            <CanvasRenderer>html2canvas</CanvasRenderer>
+            <PDFViewer>PDF.js</PDFViewer>
+        </Rendering>
+
+        <Deployment>
+            <FrontendHosting>Vercel</FrontendHosting>
+            <RealtimeHosting>Railway</RealtimeHosting>
+        </Deployment>
+    </TechnologyStack>
+
+    <SystemArchitecture>
+
+        <ArchitectureStyle>
+            Local-First Collaborative Architecture
+        </ArchitectureStyle>
+
+        <ArchitecturePrinciples>
+            <Principle>Client-heavy rendering</Principle>
+            <Principle>Minimal backend dependency</Principle>
+            <Principle>Offline-first persistence</Principle>
+            <Principle>CRDT-based synchronization</Principle>
+            <Principle>Event-driven collaboration</Principle>
+        </ArchitecturePrinciples>
+
+        <HighLevelArchitecture>
+
+            <ClientLayer>
+                <Component>iPad Teacher Interface</Component>
+                <Component>MacBook Presenter View</Component>
+                <Component>Student Viewer Clients</Component>
+            </ClientLayer>
+
+            <RealtimeSyncLayer>
+                <Component>Yjs CRDT Engine</Component>
+                <Component>Hocuspocus Collaboration Server</Component>
+                <Component>Presence Management</Component>
+            </RealtimeSyncLayer>
+
+            <BackendLayer>
+                <Component>Session Storage</Component>
+                <Component>Authentication</Component>
+                <Component>Metadata Persistence</Component>
+            </BackendLayer>
+
+            <DatabaseLayer>
+                <Component>PostgreSQL</Component>
+                <Component>JSON Board Storage</Component>
+            </DatabaseLayer>
+
+        </HighLevelArchitecture>
+
+    </SystemArchitecture>
+
+    <FrontendArchitecture>
+
+        <FolderStructure>
+            <Folder>/apps/web</Folder>
+            <Folder>/components/board</Folder>
+            <Folder>/components/toolbar</Folder>
+            <Folder>/components/presentation</Folder>
+            <Folder>/components/latex</Folder>
+            <Folder>/components/pdf</Folder>
+            <Folder>/services/sync</Folder>
+            <Folder>/services/export</Folder>
+            <Folder>/hooks</Folder>
+            <Folder>/store</Folder>
+        </FolderStructure>
+
+        <StateManagement>
+            <LocalState>Zustand</LocalState>
+            <CollaborativeState>Yjs Documents</CollaborativeState>
+            <Persistence>IndexedDB</Persistence>
+        </StateManagement>
+
+    </FrontendArchitecture>
+
+    <DatabaseDesign>
+
+        <EntityRelationship>
+            Users -> Sessions -> Boards
+        </EntityRelationship>
+
+        <UsersTable>
+            <![CDATA[
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    email TEXT UNIQUE,
+    name TEXT,
+    created_at TIMESTAMP
+);
+            ]]>
+        </UsersTable>
+
+        <SessionsTable>
+            <![CDATA[
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    title TEXT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+            ]]>
+        </SessionsTable>
+
+        <BoardsTable>
+            <![CDATA[
+CREATE TABLE boards (
+    id UUID PRIMARY KEY,
+    session_id UUID REFERENCES sessions(id),
+    board_state JSONB,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+            ]]>
+        </BoardsTable>
+
+    </DatabaseDesign>
+
+    <APIArchitecture>
+
+        <RESTEndpoints>
+            <Endpoint method="POST">/api/auth/login</Endpoint>
+            <Endpoint method="POST">/api/auth/logout</Endpoint>
+            <Endpoint method="GET">/api/sessions</Endpoint>
+            <Endpoint method="POST">/api/sessions</Endpoint>
+            <Endpoint method="GET">/api/sessions/:id</Endpoint>
+            <Endpoint method="DELETE">/api/sessions/:id</Endpoint>
+            <Endpoint method="GET">/api/boards/:id</Endpoint>
+            <Endpoint method="POST">/api/boards/:id/save</Endpoint>
+        </RESTEndpoints>
+
+        <WebSocketEvents>
+            <Event>BOARD_UPDATE</Event>
+            <Event>CURSOR_UPDATE</Event>
+            <Event>VIEWPORT_UPDATE</Event>
+            <Event>SESSION_JOIN</Event>
+            <Event>SESSION_LEAVE</Event>
+        </WebSocketEvents>
+
+    </APIArchitecture>
+
+    <RealtimeCollaboration>
+
+        <CRDTArchitecture>
+            <Technology>Yjs</Technology>
+
+            <Advantages>
+                <Advantage>Eventual consistency</Advantage>
+                <Advantage>Offline merge support</Advantage>
+                <Advantage>Conflict-free synchronization</Advantage>
+                <Advantage>High realtime performance</Advantage>
+            </Advantages>
+        </CRDTArchitecture>
+
+        <SyncFlow>
+            TeacherAction -> YjsDocument -> WebSocketBroadcast -> ConnectedClients -> CanvasRender
+        </SyncFlow>
+
+    </RealtimeCollaboration>
+
+    <ExportPipeline>
+
+        <PDFExportFlow>
+            CanvasState -> DOMSnapshot -> CanvasConversion -> PDFGeneration -> LocalDownload
+        </PDFExportFlow>
+
+        <Technologies>
+            <Technology>jsPDF</Technology>
+            <Technology>html2canvas</Technology>
+        </Technologies>
+
+    </ExportPipeline>
+
+    <LatexRenderingPipeline>
+
+        <EquationFlow>
+            UserInput -> EquationParser -> KaTeXRenderer -> BoardObject
+        </EquationFlow>
+
+        <InputTypes>
+            <Type>Slash Commands</Type>
+            <Type>Raw LaTeX</Type>
+            <Type>Future Handwriting Recognition</Type>
+        </InputTypes>
+
+    </LatexRenderingPipeline>
+
+    <OfflineFirstStrategy>
+
+        <LocalCaching>
+            <CachedData>Board State</CachedData>
+            <CachedData>Tool Settings</CachedData>
+            <CachedData>Session Metadata</CachedData>
+        </LocalCaching>
+
+        <OfflineRecovery>
+            Local edits continue during network failure.
+            CRDT queues accumulate updates.
+            Reconnection merges changes automatically.
+        </OfflineRecovery>
+
+    </OfflineFirstStrategy>
+
+    <DeploymentArchitecture>
+
+        <FrontendDeployment>
+            <Platform>Vercel</Platform>
+        </FrontendDeployment>
+
+        <RealtimeDeployment>
+            <Platform>Railway</Platform>
+        </RealtimeDeployment>
+
+        <DatabaseDeployment>
+            <Platform>Supabase PostgreSQL</Platform>
+        </DatabaseDeployment>
+
+    </DeploymentArchitecture>
+
+    <PerformanceOptimization>
+
+        <RenderingOptimization>
+            <Technique>Viewport Virtualization</Technique>
+            <Technique>Incremental Rendering</Technique>
+            <Technique>Batched Updates</Technique>
+            <Technique>Memoized Components</Technique>
+        </RenderingOptimization>
+
+        <NetworkOptimization>
+            <Technique>Delta Synchronization</Technique>
+            <Technique>CRDT Compression</Technique>
+            <Technique>WebSocket Batching</Technique>
+            <Technique>Lazy Loading</Technique>
+        </NetworkOptimization>
+
+    </PerformanceOptimization>
+
+    <EnhancementSystem>
+
+        <EnhanceWorkflow>
+            User Sketch -> Recognition Engine -> Suggested Enhancement -> User Approval -> Beautified Graph
+        </EnhanceWorkflow>
+
+        <BeautificationCapabilities>
+            <Capability>Auto-aligned charts</Capability>
+            <Capability>Clean graph rendering</Capability>
+            <Capability>Typography enhancement</Capability>
+            <Capability>Arrow and connector correction</Capability>
+            <Capability>Flowchart structuring</Capability>
+        </BeautificationCapabilities>
+
+        <SupportedVisualStructures>
+            <Structure>Line Graphs</Structure>
+            <Structure>Bar Charts</Structure>
+            <Structure>Pie Charts</Structure>
+            <Structure>Flowcharts</Structure>
+            <Structure>System Architecture Diagrams</Structure>
+            <Structure>Node Graphs</Structure>
+            <Structure>Pipeline Diagrams</Structure>
+        </SupportedVisualStructures>
+
+    </EnhancementSystem>
+
+    <FutureEnhancements>
+
+        <AIEnhancements>
+            <Feature>Handwriting to LaTeX</Feature>
+            <Feature>AI Summarization</Feature>
+            <Feature>Session Transcript Generation</Feature>
+            <Feature>Diagram Beautification</Feature>
+            <Feature>RAG-Powered Retrieval</Feature>
+        </AIEnhancements>
+
+        <AdvancedTeachingFeatures>
+            <Feature>Replay Mode</Feature>
+            <Feature>Session Timeline</Feature>
+            <Feature>Interactive Quizzes</Feature>
+            <Feature>Embedded Terminal Execution</Feature>
+        </AdvancedTeachingFeatures>
+
+    </FutureEnhancements>
+
+    <DevelopmentRoadmap>
+
+        <Phase id="1">
+            <Title>Core Foundation</Title>
+            <Duration>2 Weeks</Duration>
+
+            <Deliverables>
+                <Item>Canvas Integration</Item>
+                <Item>Stylus Support</Item>
+                <Item>Basic Tools</Item>
+                <Item>Local Persistence</Item>
+            </Deliverables>
+        </Phase>
+
+        <Phase id="2">
+            <Title>Realtime Infrastructure</Title>
+            <Duration>2 Weeks</Duration>
+
+            <Deliverables>
+                <Item>Yjs Integration</Item>
+                <Item>Hocuspocus Server</Item>
+                <Item>Realtime Synchronization</Item>
+                <Item>Presenter Mode</Item>
+            </Deliverables>
+        </Phase>
+
+        <Phase id="3">
+            <Title>Technical Features</Title>
+            <Duration>2 Weeks</Duration>
+
+            <Deliverables>
+                <Item>LaTeX Blocks</Item>
+                <Item>Code Blocks</Item>
+                <Item>PDF Annotation</Item>
+                <Item>Export Pipeline</Item>
+            </Deliverables>
+        </Phase>
+
+        <Phase id="4">
+            <Title>Optimization</Title>
+            <Duration>2 Weeks</Duration>
+
+            <Deliverables>
+                <Item>iPad UX Optimization</Item>
+                <Item>Offline Improvements</Item>
+                <Item>Rendering Optimization</Item>
+                <Item>Security Hardening</Item>
+            </Deliverables>
+        </Phase>
+
+    </DevelopmentRoadmap>
+
+    <FinalRecommendation>
+
+        <RecommendedStack>
+            <Frontend>Next.js</Frontend>
+            <Whiteboard>tldraw</Whiteboard>
+            <Collaboration>Yjs</Collaboration>
+            <SyncServer>Hocuspocus</SyncServer>
+            <Database>Supabase PostgreSQL</Database>
+            <Rendering>React + Tailwind</Rendering>
+            <Export>jsPDF</Export>
+            <Equations>KaTeX</Equations>
+            <Deployment>Vercel + Railway</Deployment>
+        </RecommendedStack>
+
+        <DesignPhilosophy>
+            The platform prioritizes cognitive flow, teaching speed,
+            technical expressiveness, visual clarity, and minimal interaction friction.
+        </DesignPhilosophy>
+
+    </FinalRecommendation>
+
+</TechnicalTeachingPlatform>

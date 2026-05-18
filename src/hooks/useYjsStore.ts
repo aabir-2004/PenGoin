@@ -17,7 +17,11 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
     const yDoc = new Y.Doc();
     const yStore = yDoc.getMap<any>('store');
 
-    const providerUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || defaultHostUrl;
+    // NEXT_PUBLIC_ vars are baked in at build time. If missing, detect environment:
+    // - localhost → use local dev server
+    // - deployed → use production Hugging Face backend
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const providerUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || (isLocalhost ? defaultHostUrl : 'wss://dearfatty-pengoin-backend.hf.space');
 
     const provider = new HocuspocusProvider({
       url: providerUrl,

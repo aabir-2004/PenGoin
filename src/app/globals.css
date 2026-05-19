@@ -39,11 +39,11 @@ body {
   background: #09090a !important;
 }
 
-/* Move the main toolbar to bottom center */
+/* Place the main toolbar a bit lower under the app header */
 .excalidraw .App-toolbar-container {
   position: fixed !important;
-  top: auto !important;
-  bottom: 28px !important;
+  top: 74px !important;
+  bottom: auto !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 30 !important;

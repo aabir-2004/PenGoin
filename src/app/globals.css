@@ -24,3 +24,119 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ========================================
+   Excalidraw UI Overrides — PenGoin Theme
+   ======================================== */
+
+/* Move the main toolbar to bottom center */
+.excalidraw .App-toolbar-container {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 28px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 30 !important;
+}
+
+/* Move the shape toolbar to bottom as well */
+.excalidraw .App-toolbar {
+  background: rgba(20, 20, 22, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48) !important;
+  padding: 8px 12px !important;
+}
+
+/* Style toolbar buttons */
+.excalidraw .ToolIcon__icon {
+  border-radius: 10px !important;
+}
+
+.excalidraw .ToolIcon__icon:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon,
+.excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon {
+  background: rgba(122, 90, 248, 0.22) !important;
+}
+
+/* Hide the top bar welcome screen / help menu */
+.excalidraw .layer-ui__wrapper__top-right {
+  top: auto !important;
+  bottom: 28px !important;
+  right: 24px !important;
+}
+
+/* Hide the library icon to keep it clean */
+.excalidraw .library-button {
+  display: none !important;
+}
+
+/* Style sidebar panels (properties, colors, etc.) */
+.excalidraw .App-menu {
+  background: rgba(22, 22, 25, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+}
+
+/* Remove Excalidraw watermark/logo */
+.excalidraw .main-menu-trigger {
+  display: none !important;
+}
+
+/* Style the color picker dots */
+.excalidraw .color-picker__button {
+  border-radius: 50% !important;
+}
+
+/* Cleaner scrollbar in panels */
+.excalidraw ::-webkit-scrollbar {
+  width: 4px;
+}
+.excalidraw ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.excalidraw ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+/* Hide Excalidraw's built-in grid so only the custom blackboard texture remains */
+.excalidraw svg.Grid {
+  display: none !important;
+}
+
+/* Blackboard-style sparse dot grid */
+.excalidraw .interactive.excalidraw__canvas,
+.excalidraw canvas.excalidraw__canvas {
+  background-color: #09090a !important;
+  background-image:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0.8px, transparent 0.9px),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 38%) !important;
+  background-size: 28px 28px, 100% 100% !important;
+  background-position: 0 0, center center !important;
+}
+
+/* Ensure no dashed grid treatment appears anywhere */
+.excalidraw .Grid line,
+.excalidraw .Grid path {
+  display: none !important;
+  stroke-dasharray: none !important;
+}
+
+.excalidraw .layer-ui__wrapper__footer-left,
+.excalidraw .layer-ui__wrapper__footer-right {
+  bottom: 28px !important;
+}
+
+.excalidraw .layer-ui__wrapper__footer-left {
+  left: 24px !important;
+}
+
+.excalidraw .layer-ui__wrapper__footer-right {
+  right: 24px !important;
+}

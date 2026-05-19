@@ -7,6 +7,16 @@ import { useYjsStore } from "@/hooks/useYjsStore";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
+type CameraState = Record<string, unknown>;
+
+declare global {
+  interface Window {
+    __pengoin_user_id?: string;
+    togglePresenter?: () => void;
+    exportWhiteboard?: (format?: "png" | "svg") => Promise<void>;
+  }
+}
+
 // Excalidraw must be loaded client-side only (no SSR)
 const Excalidraw = dynamic(
   async () => (await import("@excalidraw/excalidraw")).Excalidraw,
@@ -59,7 +69,7 @@ export default function Whiteboard() {
       excalidrawAPI.updateScene({ elements: storeState.initialElements });
       queueMicrotask(() => { isRemoteUpdateRef.current = false; });
     }
-  }, [storeState.status, excalidrawAPI]);
+  }, [storeState.status, storeState.initialElements, excalidrawAPI]);
 
   // Handle local changes → push to Yjs
   const handleChange = useCallback(
@@ -93,7 +103,7 @@ export default function Whiteboard() {
 
   // Update presenter state in zustand
   useEffect(() => {
-    const myId = typeof window !== 'undefined' ? (window as any).__pengoin_user_id : null;
+    const myId = typeof window !== 'undefined' ? window.__pengoin_user_id ?? null : null;
     const amIPresenting = presenterId === myId;
     const isFollowing = !!presenterId && !amIPresenting;
     setPresenterState(amIPresenting, isFollowing);
@@ -102,15 +112,15 @@ export default function Whiteboard() {
   // Camera sync for presenter
   useEffect(() => {
     if (storeState.status !== 'synced' || !storeState.yDoc || !excalidrawAPI) return;
-    const yMeta = storeState.yDoc.getMap('meta');
-    const myId = typeof window !== 'undefined' ? (window as any).__pengoin_user_id : null;
+    const yMeta = storeState.yDoc.getMap<CameraState | string | null>('meta');
+    const myId = typeof window !== 'undefined' ? window.__pengoin_user_id ?? null : null;
 
     if (presenterId && presenterId !== myId) {
       // Follow presenter's scroll position
       const handleCameraChange = () => {
-        const cam = yMeta.get('camera') as any;
+        const cam = yMeta.get('camera');
         if (cam) {
-          excalidrawAPI.scrollToContent(undefined as any, { fitToContent: false });
+          excalidrawAPI.scrollToContent(excalidrawAPI.getSceneElements(), { fitToContent: false });
         }
       };
       yMeta.observe(handleCameraChange);
@@ -123,12 +133,12 @@ export default function Whiteboard() {
     if (storeState.status !== 'synced' || !storeState.yDoc) return;
     
     // Generate a stable user ID for this session
-    if (typeof window !== 'undefined' && !(window as any).__pengoin_user_id) {
-      (window as any).__pengoin_user_id = crypto.randomUUID();
+    if (typeof window !== 'undefined' && !window.__pengoin_user_id) {
+      window.__pengoin_user_id = crypto.randomUUID();
     }
-    const myId = (window as any).__pengoin_user_id;
+    const myId = window.__pengoin_user_id;
 
-    (window as any).togglePresenter = () => {
+    window.togglePresenter = () => {
       const yMeta = storeState.yDoc!.getMap('meta');
       const currentId = yMeta.get('presenterId');
       if (currentId === myId) {
@@ -138,14 +148,14 @@ export default function Whiteboard() {
       }
     };
 
-    return () => { delete (window as any).togglePresenter; };
+    return () => { delete window.togglePresenter; };
   }, [storeState]);
 
   // Expose export to TopBar
   useEffect(() => {
     if (!excalidrawAPI) return;
 
-    (window as any).exportWhiteboard = async (format: 'png' | 'svg' = 'png') => {
+    window.exportWhiteboard = async (format: 'png' | 'svg' = 'png') => {
       try {
         const { exportToBlob, exportToSvg } = await getExportUtils();
         const elements = excalidrawAPI.getSceneElements();
@@ -187,7 +197,7 @@ export default function Whiteboard() {
       }
     };
 
-    return () => { delete (window as any).exportWhiteboard; };
+    return () => { delete window.exportWhiteboard; };
   }, [excalidrawAPI]);
 
   // === Render ===
@@ -209,7 +219,9 @@ export default function Whiteboard() {
   return (
     <div 
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} 
-      className={isFollowingPresenter ? "pointer-events-none" : ""}
+      className={`overflow-hidden rounded-[24px] border border-white/6 bg-[#09090A] ${
+        isFollowingPresenter ? "pointer-events-none" : ""
+      }`}
     >
       <div style={{ width: "100%", height: "100%" }}>
         <Excalidraw
@@ -217,13 +229,17 @@ export default function Whiteboard() {
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
           onChange={handleChange}
           theme="dark"
-          gridModeEnabled={true}
+          gridModeEnabled={false}
           viewModeEnabled={effectivelyReadOnly}
+          UIOptions={{
+            canvasActions: {
+              toggleTheme: false,
+            },
+          }}
           initialData={{
             appState: {
               theme: "dark",
-              gridSize: 20,
-              viewBackgroundColor: "#0F0F11",
+              viewBackgroundColor: "#09090A",
             },
           }}
         />

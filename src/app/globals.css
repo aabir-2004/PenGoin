@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f0f11;
+  --foreground: #f4f4f6;
 }
 
 @theme inline {
@@ -12,155 +12,35 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 html,
 body {
   background: #0f0f11;
-}
-
-body {
-  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 /* ========================================
-   Excalidraw UI Overrides — PenGoin Theme
+   tldraw Overrides — PenGoin Theme
    ======================================== */
 
-/* Force dark canvas background on the correct Excalidraw dark-mode class */
-.excalidraw.excalidraw--dark,
-.excalidraw-container {
-  background-color: #09090a !important;
-}
-
-/* Dot grid — purely visual, drawn via CSS on the canvas wrapper.
-   Uses radial-gradient to paint a small dot at each grid intersection.
-   Grid spacing matches the 32px reference size at 100% zoom. */
-.excalidraw.excalidraw--dark .excalidraw__canvas-wrapper,
-.excalidraw.excalidraw--dark .interactive {
-  background-color: #09090a !important;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px) !important;
-  background-size: 32px 32px !important;
-}
-
-/* Dark pill toolbar — let Excalidraw position it naturally, just restyle it */
-.excalidraw .App-toolbar {
-  background: #1c1c20 !important;
-  color: #f4f4f6 !important;
-  -webkit-backdrop-filter: blur(18px) !important;
-  backdrop-filter: blur(18px) !important;
-  border: 1px solid #2e2e33 !important;
-  border-radius: 22px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
-  padding: 8px 12px !important;
-  width: auto !important;
-}
-
-/* Move toolbar to bottom — only override the vertical position, not the centering */
-.excalidraw .App-toolbar-container {
-  bottom: 28px !important;
+/* Move the toolbar to the bottom */
+.tl-toolbar {
+  bottom: 20px !important;
   top: auto !important;
 }
 
-/* Style toolbar buttons for dark theme */
-.excalidraw .ToolIcon__icon {
-  border-radius: 10px !important;
-  color: #c8c8d0 !important;
+/* Dot grid on the canvas — purely visual CSS overlay */
+.tl-canvas {
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.15) 1px,
+    transparent 1px
+  ) !important;
+  background-size: 32px 32px !important;
 }
 
-.excalidraw .App-toolbar .ToolIcon__icon svg,
-.excalidraw .App-toolbar .ToolIcon__icon,
-.excalidraw .App-toolbar .ToolIcon__keybinding,
-.excalidraw .App-toolbar .HintViewer {
-  color: #c8c8d0 !important;
-  opacity: 0.9 !important;
-}
-
-.excalidraw .ToolIcon__icon:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-}
-
-.excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon,
-.excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon {
-  background: rgba(122, 90, 248, 0.25) !important;
-  color: #a78bfa !important;
-}
-
-.excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon svg,
-.excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon svg {
-  color: #a78bfa !important;
-}
-
-.excalidraw .App-toolbar__divider {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.excalidraw .App-toolbar-content {
-  justify-content: center !important;
-  gap: 2px !important;
-}
-
-/* Keep top-right UI (save status, etc.) at the top */
-.excalidraw .layer-ui__wrapper__top-right {
-  top: 12px !important;
-  bottom: auto !important;
-  right: 16px !important;
-}
-
-/* Hide the library icon to keep it clean */
-.excalidraw .library-button {
-  display: none !important;
-}
-
-/* Style sidebar panels (properties, colors, etc.) */
-.excalidraw .App-menu {
-  background: rgba(22, 22, 25, 0.95) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 14px !important;
-}
-
-/* Remove Excalidraw watermark/logo */
-.excalidraw .main-menu-trigger {
-  display: none !important;
-}
-
-/* Style the color picker dots */
-.excalidraw .color-picker__button {
-  border-radius: 50% !important;
-}
-
-/* Cleaner scrollbar in panels */
-.excalidraw ::-webkit-scrollbar {
-  width: 4px;
-}
-.excalidraw ::-webkit-scrollbar-track {
-  background: transparent;
-}
-.excalidraw ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-}
-
-/* Excalidraw's built-in SVG grid is disabled — we use CSS dot grid instead */
-
-.excalidraw .layer-ui__wrapper__footer-left,
-.excalidraw .layer-ui__wrapper__footer-right {
-  bottom: 28px !important;
-}
-
-.excalidraw .layer-ui__wrapper__footer-left {
-  left: 24px !important;
-}
-
-.excalidraw .layer-ui__wrapper__footer-right {
-  right: 24px !important;
+/* Ensure tldraw fills its container */
+.tl-container {
+  width: 100% !important;
+  height: 100% !important;
 }

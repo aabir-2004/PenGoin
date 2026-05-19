@@ -71,6 +71,19 @@ export default function Whiteboard() {
 
   const handleOfflineFallback = useCallback(() => setIsOffline(true), []);
 
+  // Apply dark background immediately when API is ready, before sync completes
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+    excalidrawAPI.updateScene({
+      appState: {
+        theme: "dark",
+        viewBackgroundColor: BOARD_BACKGROUND,
+        currentItemStrokeColor: "#FFFFFF",
+        currentItemBackgroundColor: "transparent",
+      },
+    });
+  }, [excalidrawAPI]);
+
   const storeState = useYjsStore({
     roomId: activeNoteId || "default",
     hostUrl: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 

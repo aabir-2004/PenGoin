@@ -34,14 +34,26 @@ body {
    Excalidraw UI Overrides — PenGoin Theme
    ======================================== */
 
-/* Move the main toolbar to the bottom of the canvas, centered */
+/* Force dark canvas background — overrides Excalidraw's light default */
+.excalidraw,
+.excalidraw.theme--dark,
+.excalidraw-container {
+  background-color: #09090a !important;
+}
+
+/* The actual canvas element background */
+.excalidraw canvas {
+  background-color: #09090a !important;
+}
+
+/* Toolbar: fixed positioning, offset past the sidebar (~350px), centered in remaining space */
 .excalidraw .App-toolbar-container {
-  position: absolute !important;
+  position: fixed !important;
   bottom: 28px !important;
   top: auto !important;
-  left: 50% !important;
+  left: calc(350px + (100vw - 350px) / 2) !important;
   transform: translateX(-50%) !important;
-  z-index: 35 !important;
+  z-index: 100 !important;
   width: auto !important;
 }
 

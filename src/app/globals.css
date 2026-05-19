@@ -3,6 +3,7 @@
 :root {
   --background: #0f0f11;
   --foreground: #f4f4f6;
+  --sidebar-width: 220px;
 }
 
 @theme inline {
@@ -23,24 +24,34 @@ body {
    tldraw Overrides — PenGoin Theme
    ======================================== */
 
-/* Move the toolbar to the bottom */
-.tl-toolbar {
-  bottom: 20px !important;
-  top: auto !important;
+/* Ensure tldraw fills its container */
+.tl-container {
+  width: 100% !important;
+  height: 100% !important;
 }
 
-/* Dot grid on the canvas — purely visual CSS overlay */
+/* Dot grid — purely visual CSS overlay on the canvas */
 .tl-canvas {
   background-image: radial-gradient(
     circle,
-    rgba(255, 255, 255, 0.15) 1px,
+    rgba(255, 255, 255, 0.12) 1px,
     transparent 1px
   ) !important;
   background-size: 32px 32px !important;
 }
 
-/* Ensure tldraw fills its container */
-.tl-container {
-  width: 100% !important;
-  height: 100% !important;
+/* Move toolbar to bottom */
+.tl-toolbar {
+  bottom: 20px !important;
+  top: auto !important;
+  /* Offset right of sidebar so toolbar stays centred in the canvas area */
+  left: calc(50% + var(--sidebar-width) / 2) !important;
+  transform: translateX(-50%) !important;
+}
+
+/* Push tldraw's own UI elements right of our sidebar */
+.tl-ui__left,
+.tl-zoom-menu,
+.tl-navigation-panel {
+  left: calc(var(--sidebar-width) + 12px) !important;
 }

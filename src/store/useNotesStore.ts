@@ -1,87 +1,28 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
 
-export interface Note {
-  id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  createdAt: number;
-  updatedAt: number;
-}
-
-interface NotesState {
-  notes: Note[];
-  activeNoteId: string | null;
-  addNote: (title?: string) => void;
-  updateNote: (id: string, updates: Partial<Note>) => void;
-  deleteNote: (id: string) => void;
-  setActiveNote: (id: string) => void;
+/**
+ * Simplified store — one document per user, pages managed inside tldraw.
+ * The "notebook title" is just a display name for the single workspace.
+ */
+interface WorkspaceState {
+  workspaceTitle: string;
+  setWorkspaceTitle: (title: string) => void;
   isReadOnly: boolean;
   toggleReadOnly: () => void;
 }
 
-export const useNotesStore = create<NotesState>()(
+export const useNotesStore = create<WorkspaceState>()(
   persist(
     (set) => ({
-      notes: [
-        {
-          id: 'default-note-1',
-          title: 'Untitled Note',
-          description: '',
-          tags: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        },
-      ],
-      activeNoteId: 'default-note-1',
+      workspaceTitle: 'My Notes',
+      setWorkspaceTitle: (title) => set({ workspaceTitle: title }),
       isReadOnly: false,
-
-      toggleReadOnly: () =>
-        set((state) => ({ isReadOnly: !state.isReadOnly })),
-
-      addNote: (title = 'Untitled Note') =>
-        set((state) => {
-          const newNote: Note = {
-            id: uuidv4(),
-            title,
-            description: '',
-            tags: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-          return {
-            notes: [newNote, ...state.notes],
-            activeNoteId: newNote.id,
-          };
-        }),
-
-      updateNote: (id, updates) =>
-        set((state) => ({
-          notes: state.notes.map((note) =>
-            note.id === id
-              ? { ...note, ...updates, updatedAt: Date.now() }
-              : note
-          ),
-        })),
-
-      deleteNote: (id) =>
-        set((state) => {
-          const newNotes = state.notes.filter((note) => note.id !== id);
-          return {
-            notes: newNotes,
-            activeNoteId:
-              state.activeNoteId === id
-                ? (newNotes[0]?.id ?? null)
-                : state.activeNoteId,
-          };
-        }),
-
-      setActiveNote: (id) => set({ activeNoteId: id }),
+      toggleReadOnly: () => set((state) => ({ isReadOnly: !state.isReadOnly })),
     }),
-    {
-      name: 'pengoin-notes-storage',
-    }
+    { name: 'pengoin-workspace-storage' }
   )
 );
+
+// Single fixed room ID — one document for the whole app
+export const ROOM_ID = 'pengoin-main';

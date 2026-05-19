@@ -1,63 +1,80 @@
 "use client";
 
-import { Plus } from "lucide-react";
-import { useNotesStore } from "@/store/useNotesStore";
+import { useEditor, track, TLPage } from "tldraw";
+import { Plus, Trash2 } from "lucide-react";
 
-export default function Sidebar() {
-  const { notes, activeNoteId, addNote, setActiveNote } = useNotesStore();
+/**
+ * Sidebar — shows tldraw pages as slides.
+ * Must be rendered inside a <Tldraw> tree so useEditor() works.
+ */
+const Sidebar = track(function Sidebar() {
+  const editor = useEditor();
+  const pages = editor.getPages();
+  const currentPage = editor.getCurrentPage();
+
+  const addPage = () => {
+    const name = `Page ${pages.length + 1}`;
+    editor.createPage({ name });
+    // createPage adds the page and makes it current automatically
+  };
+
+  const goToPage = (page: TLPage) => {
+    editor.setCurrentPage(page);
+  };
+
+  const deletePage = (e: React.MouseEvent, page: TLPage) => {
+    e.stopPropagation();
+    if (pages.length <= 1) return; // keep at least one page
+    editor.deletePage(page);
+  };
 
   return (
-    <div className="flex flex-col h-full w-[320px] md:w-[350px] shrink-0 border-r border-[#26262B] bg-[#161619] text-[#F4F4F6] z-50 relative">
+    <div className="flex flex-col h-full w-[220px] shrink-0 border-r border-[#26262B] bg-[#161619] text-[#F4F4F6] z-50 relative">
       {/* Header */}
-      <div className="flex flex-col gap-4 p-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">My Notes</h1>
-        <button 
-          onClick={() => addNote()}
-          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#202024] hover:bg-[#28282D] text-sm text-[#F4F4F6] border border-[#2E2E33] rounded-lg transition-colors cursor-pointer"
+      <div className="flex flex-col gap-3 p-4">
+        <h1 className="text-lg font-semibold tracking-tight text-white">Pages</h1>
+        <button
+          type="button"
+          onClick={addPage}
+          className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#202024] hover:bg-[#28282D] text-xs text-[#F4F4F6] border border-[#2E2E33] rounded-lg transition-colors cursor-pointer"
         >
-          <Plus size={16} />
-          Add new note
+          <Plus size={14} />
+          Add page
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="px-6 border-b border-[#26262B] flex gap-6">
-        <div className="border-b-2 border-white pb-3 text-sm font-medium cursor-pointer">All Notes</div>
-        <div className="pb-3 text-sm text-[#9A9A9F] hover:text-white cursor-pointer">Tags</div>
-      </div>
-
-      {/* Notes List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
-        {notes.map((note) => {
-          const isActive = note.id === activeNoteId;
-          const dateLabel = new Date(note.createdAt).toLocaleDateString();
-
+      {/* Page list */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4 flex flex-col gap-1.5">
+        {pages.map((page, index) => {
+          const isActive = page.id === currentPage.id;
           return (
-            <div 
-              key={note.id}
-              onClick={() => setActiveNote(note.id)}
-              className={`flex flex-col gap-2 p-4 rounded-xl border transition-colors duration-200 cursor-pointer relative ${
-                isActive ? 'border-[#36363B] bg-[#202024]' : 'border-[#26262B] hover:bg-[#1E1E22]'
+            <div
+              key={page.id}
+              onClick={() => goToPage(page)}
+              className={`group flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border transition-colors duration-150 cursor-pointer ${
+                isActive
+                  ? "border-[#36363B] bg-[#202024]"
+                  : "border-transparent hover:bg-[#1E1E22] hover:border-[#26262B]"
               }`}
             >
-              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#5F5F64]">{dateLabel}</div>
-              <div className="flex justify-between items-start">
-                <h2 className="text-sm font-semibold text-[#F4F4F6] line-clamp-1">{note.title}</h2>
-                {isActive && <div className="w-2 h-2 rounded-full bg-violet-500 mt-1"></div>}
+              <div className="flex items-center gap-2.5 min-w-0">
+                {/* Slide number badge */}
+                <span className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold bg-[#2a2a30] text-[#9A9A9F]">
+                  {index + 1}
+                </span>
+                <span className="text-xs font-medium text-[#F4F4F6] truncate">
+                  {page.name}
+                </span>
               </div>
-              {note.description && (
-                <p className="text-xs text-[#9A9A9F] line-clamp-2 leading-relaxed">
-                  {note.description}
-                </p>
-              )}
-              {note.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {note.tags.map(tag => (
-                    <span key={tag} className="px-2 py-0.5 text-[10px] font-medium text-[#9A9A9F] bg-[#1E1E22] border border-[#2E2E33] rounded-full">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+              {pages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => deletePage(e, page)}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 text-[#5F5F64] hover:text-red-400 transition-all"
+                  title="Delete page"
+                >
+                  <Trash2 size={12} />
+                </button>
               )}
             </div>
           );
@@ -65,4 +82,6 @@ export default function Sidebar() {
       </div>
     </div>
   );
-}
+});
+
+export default Sidebar;

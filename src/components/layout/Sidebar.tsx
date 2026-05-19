@@ -1,118 +1,63 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useNotesStore } from "@/store/useNotesStore";
-import { useState } from "react";
 
 export default function Sidebar() {
-  const { notes, activeNoteId, addNote, setActiveNote, deleteNote } = useNotesStore();
-  const [activeTab, setActiveTab] = useState<'all' | 'tags'>('all');
+  const { notes, activeNoteId, addNote, setActiveNote } = useNotesStore();
 
   return (
-    <div className="relative z-50 flex h-full w-[370px] shrink-0 flex-col border-r border-white/8 bg-[linear-gradient(180deg,_rgba(18,18,20,0.94)_0%,_rgba(13,13,15,0.98)_100%)] text-[#F4F4F6]">
+    <div className="flex flex-col h-full w-[320px] md:w-[350px] shrink-0 border-r border-[#26262B] bg-[#161619] text-[#F4F4F6] z-50 relative">
       {/* Header */}
-      <div className="flex flex-col gap-6 px-7 pb-5 pt-9">
-        <h1 className="text-[32px] font-medium tracking-[-0.03em] text-white">My Notes</h1>
+      <div className="flex flex-col gap-4 p-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">My Notes</h1>
         <button 
           onClick={() => addNote()}
-          className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-white/6 bg-[linear-gradient(180deg,_rgba(42,42,45,0.82)_0%,_rgba(28,28,31,0.88)_100%)] px-5 py-4 text-left text-[14px] font-medium text-[#E4E4E8] transition-all duration-200 hover:border-white/12 hover:bg-[linear-gradient(180deg,_rgba(49,49,53,0.88)_0%,_rgba(33,33,37,0.94)_100%)]"
+          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#202024] hover:bg-[#28282D] text-sm text-[#F4F4F6] border border-[#2E2E33] rounded-lg transition-colors cursor-pointer"
         >
-          <Plus size={18} strokeWidth={2.2} />
+          <Plus size={16} />
           Add new note
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-7 border-b border-white/8 px-7">
-        <button 
-          onClick={() => setActiveTab('all')}
-          className={`cursor-pointer pb-3 text-[15px] font-medium transition-colors ${
-            activeTab === 'all' 
-              ? 'border-b-2 border-white text-white' 
-              : 'text-[#7A7A80] hover:text-white'
-          }`}
-        >
-          All Notes
-        </button>
-        <button 
-          onClick={() => setActiveTab('tags')}
-          className={`cursor-pointer pb-3 text-[15px] font-medium transition-colors ${
-            activeTab === 'tags' 
-              ? 'border-b-2 border-white text-white' 
-              : 'text-[#7A7A80] hover:text-white'
-          }`}
-        >
-          Tags
-        </button>
+      <div className="px-6 border-b border-[#26262B] flex gap-6">
+        <div className="border-b-2 border-white pb-3 text-sm font-medium cursor-pointer">All Notes</div>
+        <div className="pb-3 text-sm text-[#9A9A9F] hover:text-white cursor-pointer">Tags</div>
       </div>
 
       {/* Notes List */}
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-5">
+      <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
         {notes.map((note) => {
           const isActive = note.id === activeNoteId;
-          const date = new Date(note.createdAt);
-          const dateLabel = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' }).toUpperCase()}`;
-
-          // Assign consistent color for active dot based on index
-          const dotColors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6'];
-          const noteIndex = notes.indexOf(note);
-          const dotColor = dotColors[noteIndex % dotColors.length];
+          const dateLabel = new Date(note.createdAt).toLocaleDateString();
 
           return (
             <div 
               key={note.id}
               onClick={() => setActiveNote(note.id)}
-              className={`group relative flex cursor-pointer flex-col gap-2 rounded-[22px] border p-5 transition-all duration-200 ${
-                isActive 
-                  ? 'border-white/10 bg-[linear-gradient(180deg,_rgba(42,42,45,0.86)_0%,_rgba(29,29,32,0.92)_100%)] shadow-[0_18px_45px_rgba(0,0,0,0.22)]' 
-                  : 'border-transparent bg-transparent hover:border-white/6 hover:bg-white/[0.03]'
+              className={`flex flex-col gap-2 p-4 rounded-xl border transition-colors duration-200 cursor-pointer relative ${
+                isActive ? 'border-[#36363B] bg-[#202024]' : 'border-[#26262B] hover:bg-[#1E1E22]'
               }`}
             >
-              {/* Date & dot */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#73737A]">
-                  {dateLabel}
-                </span>
-                {isActive && (
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
-                )}
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#5F5F64]">{dateLabel}</div>
+              <div className="flex justify-between items-start">
+                <h2 className="text-sm font-semibold text-[#F4F4F6] line-clamp-1">{note.title}</h2>
+                {isActive && <div className="w-2 h-2 rounded-full bg-violet-500 mt-1"></div>}
               </div>
-
-              {/* Title */}
-              <h2 className="line-clamp-1 text-[17px] font-medium leading-tight text-[#F4F4F6]">
-                {note.title}
-              </h2>
-
-              {/* Description */}
               {note.description && (
-                <p className="line-clamp-2 text-[13px] leading-7 text-[#9E9EA4]">
+                <p className="text-xs text-[#9A9A9F] line-clamp-2 leading-relaxed">
                   {note.description}
                 </p>
               )}
-
-              {/* Tags */}
               {note.tags.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 mt-2">
                   {note.tags.map(tag => (
-                    <span 
-                      key={tag} 
-                      className="rounded-lg border border-white/6 bg-white/6 px-3 py-1 text-[11px] font-medium text-[#C3C3C9]"
-                    >
+                    <span key={tag} className="px-2 py-0.5 text-[10px] font-medium text-[#9A9A9F] bg-[#1E1E22] border border-[#2E2E33] rounded-full">
                       {tag}
                     </span>
                   ))}
                 </div>
-              )}
-
-              {/* Delete button (on hover, only for non-active) */}
-              {notes.length > 1 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}
-                  className="absolute right-4 top-4 p-1 text-[#67676D] opacity-0 transition-all duration-200 group-hover:opacity-100 hover:text-red-400"
-                  title="Delete note"
-                >
-                  <Trash2 size={12} />
-                </button>
               )}
             </div>
           );

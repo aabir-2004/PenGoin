@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MoreHorizontal, Play, Square, Eye } from "lucide-react";
+import { Play, Square, Eye } from "lucide-react";
 import { useNotesStore } from "@/store/useNotesStore";
 
 declare global {
@@ -19,16 +19,7 @@ export default function TopBar() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const lastSaved = activeNote
-    ? new Date(activeNote.updatedAt).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-    : "";
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -36,17 +27,6 @@ export default function TopBar() {
       inputRef.current.select();
     }
   }, [isEditing]);
-
-  // Close menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleSave = () => {
     setIsEditing(false);
@@ -75,20 +55,18 @@ export default function TopBar() {
     if (window.exportWhiteboard) {
       void window.exportWhiteboard(format);
     }
-    setShowMenu(false);
   };
 
   return (
-    <div className="relative z-50 flex h-[88px] items-center justify-between px-8 text-white">
-      {/* Left: Breadcrumb */}
-      <div className="flex items-center gap-3 text-sm font-medium text-[#A4A4AC]">
-        <span className="cursor-pointer transition-colors hover:text-white">My Notes</span>
-        <span className="text-[#4A4A4F]">›</span>
+    <div className="h-16 border-b border-[#26262B] px-8 flex items-center justify-between bg-[#0F0F11] z-50 relative">
+      <div className="flex items-center gap-2 text-xs font-medium text-[#9A9A9F]">
+        <span className="cursor-pointer hover:text-white transition-colors">My Notes</span>
+        <span className="text-[#5F5F64]">&gt;</span>
         {isEditing ? (
           <input
             ref={inputRef}
             type="text"
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-white outline-none"
+            className="bg-[#161619] text-white border border-[#36363B] rounded px-2 py-0.5 outline-none font-medium"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             onBlur={handleSave}
@@ -96,7 +74,7 @@ export default function TopBar() {
           />
         ) : (
           <span 
-            className="cursor-pointer text-[15px] text-white transition-colors hover:text-[#D8D8DE]"
+            className="text-white cursor-pointer hover:underline hover:text-[#9A9A9F]"
             onClick={() => {
               setEditTitle(activeNote?.title ?? "");
               setIsEditing(true);
@@ -108,84 +86,48 @@ export default function TopBar() {
         )}
       </div>
 
-      {/* Right: Actions */}
       <div className="flex items-center gap-4">
         {isFollowingPresenter && (
-          <div className="flex items-center gap-2 rounded-full border border-indigo-400/20 bg-indigo-500/10 px-3 py-1.5 text-[11px] font-medium text-indigo-300">
-            <Eye size={12} />
-            Viewing Presenter
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 text-xs font-medium rounded-full border border-indigo-500/20">
+            <Eye size={14} />
+            Viewing Presenter Screen
           </div>
         )}
         
         {!isFollowingPresenter && (
           <button 
             onClick={handleTogglePresent}
-            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[11px] font-medium transition-all duration-200 ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
               isAmIPresenter 
-                ? 'border-red-400/15 bg-red-500/10 text-red-300 hover:bg-red-500/20' 
-                : 'border-emerald-400/15 bg-emerald-500/8 text-emerald-300 hover:bg-emerald-500/15'
+                ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20' 
+                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/20'
             }`}
           >
-            {isAmIPresenter ? <Square size={11} /> : <Play size={11} />}
-            {isAmIPresenter ? 'Stop' : 'Present'}
+            {isAmIPresenter ? <Square size={14} /> : <Play size={14} />}
+            {isAmIPresenter ? 'Stop Presenting' : 'Start Presenting'}
           </button>
         )}
 
-        {/* Read-only toggle */}
+        <button 
+          onClick={() => handleExport("png")}
+          className="px-4 py-2 bg-[#202024] hover:bg-[#28282D] text-xs font-medium text-white border border-[#2E2E33] rounded-lg transition-colors cursor-pointer"
+        >
+          Export PNG
+        </button>
+        
         <button 
           onClick={toggleReadOnly}
-          className={`cursor-pointer rounded-xl border px-3.5 py-2 text-[11px] font-medium transition-all duration-200 ${
+          className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors cursor-pointer border ${
             isReadOnly
-              ? 'border-amber-400/15 bg-amber-500/10 text-amber-300'
-              : 'border-transparent bg-transparent text-[#7E7E84] hover:bg-white/5 hover:text-white'
+              ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+              : 'bg-[#202024] hover:bg-[#28282D] text-white border-[#2E2E33]'
           }`}
           title="Toggle Read-Only Mode"
         >
-          {isReadOnly ? 'Read Only' : 'Edit'}
+          {isReadOnly ? 'Read Mode: ON' : 'Read Mode: OFF'}
         </button>
 
-        {/* Saved timestamp */}
-        {lastSaved && (
-          <span className="hidden rounded-xl border border-white/8 bg-white/4 px-3.5 py-2 text-[12px] font-medium text-[#C2C2C8] md:block">
-            Saved {lastSaved}
-          </span>
-        )}
-
-        {/* More menu */}
-        <div className="relative" ref={menuRef}>
-          <button 
-            onClick={() => setShowMenu(!showMenu)}
-            className="cursor-pointer rounded-xl p-2.5 text-[#8B8B90] transition-all duration-200 hover:bg-white/5 hover:text-white"
-          >
-            <MoreHorizontal size={16} />
-          </button>
-
-          {showMenu && (
-            <div className="absolute right-0 top-full z-[100] mt-3 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#171719] shadow-2xl shadow-black/40">
-              <button 
-                onClick={() => handleExport('png')}
-                className="w-full px-4 py-2.5 text-left text-xs text-[#D0D0D5] transition-colors hover:bg-white/5"
-              >
-                Export as PNG
-              </button>
-              <button 
-                onClick={() => handleExport('svg')}
-                className="w-full px-4 py-2.5 text-left text-xs text-[#D0D0D5] transition-colors hover:bg-white/5"
-              >
-                Export as SVG
-              </button>
-              <div className="border-t border-white/8" />
-              <button 
-                onClick={() => { navigator.clipboard.writeText(window.location.href); setShowMenu(false); }}
-                className="w-full px-4 py-2.5 text-left text-xs text-[#D0D0D5] transition-colors hover:bg-white/5"
-              >
-                Copy Share Link
-              </button>
-            </div>
-          )}
-        </div>
-        
-        <button className="cursor-pointer rounded-xl bg-[#7A5AF8] px-5 py-2.5 text-[12px] font-semibold text-white shadow-[0_12px_30px_rgba(122,90,248,0.35)] transition-all duration-200 hover:bg-[#8B6BFF] active:bg-[#6D50E7]">
+        <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-xs font-medium text-white rounded-lg shadow-lg shadow-indigo-600/10 transition-colors cursor-pointer">
           Share
         </button>
       </div>

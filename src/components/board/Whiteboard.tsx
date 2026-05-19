@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useNotesStore } from "@/store/useNotesStore";
 import { useYjsStore } from "@/hooks/useYjsStore";
-import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
 type CameraState = Record<string, unknown>;
 
@@ -219,9 +219,7 @@ export default function Whiteboard() {
   return (
     <div 
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} 
-      className={`overflow-hidden rounded-[24px] border border-white/6 bg-[#09090A] ${
-        isFollowingPresenter ? "pointer-events-none" : ""
-      }`}
+      className={isFollowingPresenter ? "pointer-events-none" : ""}
     >
       <div style={{ width: "100%", height: "100%" }}>
         <Excalidraw

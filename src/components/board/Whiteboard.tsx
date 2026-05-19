@@ -10,7 +10,17 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 // Excalidraw must be loaded client-side only (no SSR)
 const Excalidraw = dynamic(
   async () => (await import("@excalidraw/excalidraw")).Excalidraw,
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 flex items-center justify-center bg-[#0F0F11]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="text-[#9A9A9F] text-sm font-medium">Loading canvas...</div>
+        </div>
+      </div>
+    ),
+  }
 );
 
 // Dynamically import export utilities  
@@ -198,24 +208,26 @@ export default function Whiteboard() {
 
   return (
     <div 
-      style={{ position: "absolute", inset: 0 }} 
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} 
       className={isFollowingPresenter ? "pointer-events-none" : ""}
     >
-      <Excalidraw
-        key={activeNoteId}
-        excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
-        onChange={handleChange}
-        theme="dark"
-        gridModeEnabled={true}
-        viewModeEnabled={effectivelyReadOnly}
-        initialData={{
-          appState: {
-            theme: "dark",
-            gridSize: 20,
-            viewBackgroundColor: "#0F0F11",
-          },
-        }}
-      />
+      <div style={{ width: "100%", height: "100%" }}>
+        <Excalidraw
+          key={activeNoteId}
+          excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
+          onChange={handleChange}
+          theme="dark"
+          gridModeEnabled={true}
+          viewModeEnabled={effectivelyReadOnly}
+          initialData={{
+            appState: {
+              theme: "dark",
+              gridSize: 20,
+              viewBackgroundColor: "#0F0F11",
+            },
+          }}
+        />
+      </div>
     </div>
   );
 }

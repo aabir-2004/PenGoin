@@ -2,8 +2,20 @@
 
 import { Tldraw, useEditor, useValue, TLTextShape, createShapeId } from "tldraw";
 import "tldraw/tldraw.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Component, ErrorInfo, ReactNode } from "react";
 import { useNotesStore } from "@/store/useNotesStore";
+
+class CanvasErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
+  state: {hasError: boolean, error: Error | null} = { hasError: false, error: null };
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Canvas crashed:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0F0F11] text-red-400 p-8 font-mono text-xs z-[9999]"><h2 className="text-lg font-bold mb-4">Canvas Error</h2><pre className="whitespace-pre-wrap">{this.state.error?.message}</pre></div>;
+    }
+    return this.props.children;
+  }
+}
 
 
 // Hook to apply custom logic and markdown shortcuts
@@ -17,6 +29,8 @@ function PenGoinLogic() {
 
     // 2. Markdown Shortcuts
     const cleanup = editor.store.listen((change) => {
+      if (change.source !== 'user') return; // PREVENT SYNC LOOPS
+
       const updated = change.changes.updated;
       for (const record of Object.values(updated)) {
         const next = record[1] as any;
@@ -203,7 +217,9 @@ function PresenterLogic({ yDoc }: { yDoc: any }) {
 
     let unsubscribeCamera: () => void;
     if (presenterId === editor.user.getId()) {
-      unsubscribeCamera = editor.store.listen(() => {
+      unsubscribeCamera = editor.store.listen((change) => {
+        if (change.source !== 'user') return; // PREVENT SYNC LOOPS
+        
         const camera = editor.getCamera();
         const prevCam = yMeta.get('camera') as any;
         if (!prevCam || prevCam.x !== camera.x || prevCam.y !== camera.y || prevCam.z !== camera.z) {
@@ -305,18 +321,20 @@ export default function Whiteboard() {
 
   return (
     <div style={{ position: "absolute", inset: 0 }} className={isFollowingPresenter ? "pointer-events-none" : ""}>
-      <Tldraw 
-        key={activeNoteId} 
-        store={storeState.store} 
-        hideUi={isFollowingPresenter} 
-        {...({ isReadOnly: effectivelyReadOnly } as any)}
-        shapeUtils={customShapeUtils}
-      >
-        <PenGoinLogic />
-        <TextSizeDropdown />
-        <PresenterLogic yDoc={storeState.yDoc} />
-        <ExportLogic />
-      </Tldraw>
+      <CanvasErrorBoundary>
+        <Tldraw 
+          key={activeNoteId} 
+          store={storeState.store} 
+          hideUi={isFollowingPresenter} 
+          {...({ isReadOnly: effectivelyReadOnly } as any)}
+          shapeUtils={customShapeUtils}
+        >
+          <PenGoinLogic />
+          <TextSizeDropdown />
+          <PresenterLogic yDoc={storeState.yDoc} />
+          <ExportLogic />
+        </Tldraw>
+      </CanvasErrorBoundary>
     </div>
   );
 }

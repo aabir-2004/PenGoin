@@ -57,12 +57,17 @@ export default function TopBar() {
           />
         ) : (
           <span
-            className="text-white font-semibold text-sm cursor-pointer hover:text-[#9A9A9F] transition-colors"
+            className={`text-white font-semibold text-sm transition-colors ${
+              isReadOnly
+                ? "cursor-default"
+                : "cursor-pointer hover:text-[#9A9A9F]"
+            }`}
             onClick={() => {
+              if (isReadOnly) return;
               setEditTitle(workspaceTitle);
               setIsEditing(true);
             }}
-            title="Click to rename"
+            title={isReadOnly ? "Rename disabled in read-only mode" : "Click to rename"}
           >
             {workspaceTitle}
           </span>

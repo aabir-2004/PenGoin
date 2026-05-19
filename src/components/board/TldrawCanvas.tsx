@@ -1,20 +1,36 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Tldraw,
   Editor,
   DefaultToolbar,
-  DefaultToolbarContent,
   TLComponents,
   TLAssetStore,
-  TLUiOverrides,
   exportToBlob,
   TLShapeId,
   useEditor,
   track,
   DefaultSizeStyle,
   TLDefaultSizeStyle,
+  DefaultFontStyle,
+  TLDefaultFontStyle,
+  SelectToolbarItem,
+  HandToolbarItem,
+  DrawToolbarItem,
+  LaserToolbarItem,
+  EraserToolbarItem,
+  ArrowToolbarItem,
+  TextToolbarItem,
+  NoteToolbarItem,
+  AssetToolbarItem,
+  RectangleToolbarItem,
+  EllipseToolbarItem,
+  DiamondToolbarItem,
+  TriangleToolbarItem,
+  LineToolbarItem,
+  HighlightToolbarItem,
+  FrameToolbarItem,
 } from "tldraw";
 import { useSync } from "@tldraw/sync";
 import { useNotesStore } from "@/store/useNotesStore";
@@ -45,53 +61,142 @@ const ASSET_STORE: TLAssetStore = {
   },
 };
 
-// ─── Size label → tldraw size mapping ────────────────────────────────────────
-// Maps a 0-100 slider value to one of tldraw's four size buckets
-function sliderToSize(v: number): TLDefaultSizeStyle {
-  if (v < 25) return "s";
-  if (v < 50) return "m";
-  if (v < 75) return "l";
-  return "xl";
-}
-function sizeToSlider(s: TLDefaultSizeStyle): number {
-  return { s: 12, m: 37, l: 62, xl: 87 }[s];
+const FONT_LABELS: Record<TLDefaultFontStyle, string> = {
+  draw: "Arial Black",
+  sans: "Calibri",
+  serif: "Times New Roman",
+  mono: "Georgia",
+};
+
+const TEXT_SIZE_OPTIONS = [
+  8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54,
+  60, 66, 72,
+];
+
+const BASE_TEXT_SIZES: Record<TLDefaultSizeStyle, number> = {
+  s: 18,
+  m: 24,
+  l: 36,
+  xl: 44,
+};
+
+function getMappedTextSize(fontSize: number): {
+  size: TLDefaultSizeStyle;
+  scale: number;
+} {
+  if (fontSize <= BASE_TEXT_SIZES.s) {
+    return { size: "s", scale: fontSize / BASE_TEXT_SIZES.s };
+  }
+  if (fontSize <= BASE_TEXT_SIZES.m) {
+    return { size: "m", scale: fontSize / BASE_TEXT_SIZES.m };
+  }
+  if (fontSize <= BASE_TEXT_SIZES.l) {
+    return { size: "l", scale: fontSize / BASE_TEXT_SIZES.l };
+  }
+  return { size: "xl", scale: fontSize / BASE_TEXT_SIZES.xl };
 }
 
-// ─── Font size slider component ───────────────────────────────────────────────
-const FontSizeSlider = track(function FontSizeSlider() {
+function getShapeProps(
+  shape: unknown
+): null | {
+  font?: TLDefaultFontStyle;
+  scale?: number;
+  size?: TLDefaultSizeStyle;
+} {
+  if (!shape || typeof shape !== "object" || !("props" in shape)) return null;
+  const props = (shape as { props: Record<string, unknown> }).props;
+  return props as {
+    font?: TLDefaultFontStyle;
+    scale?: number;
+    size?: TLDefaultSizeStyle;
+  };
+}
+
+const FontPicker = track(function FontPicker() {
   const editor = useEditor();
-  const currentSize =
-    (editor.getStyleForNextShape(DefaultSizeStyle) as TLDefaultSizeStyle) ??
-    "m";
-  const sliderValue = sizeToSlider(currentSize);
+  const selectedShapes = editor.getSelectedShapes();
+  const selectedFont = selectedShapes
+    .map(getShapeProps)
+    .find((props) => props?.font)?.font;
+  const currentFont =
+    selectedFont ??
+    (editor.getStyleForNextShape(DefaultFontStyle) as TLDefaultFontStyle) ??
+    "sans";
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseInt(e.target.value, 10);
-    const size = sliderToSize(v);
-    editor.setStyleForNextShapes(DefaultSizeStyle, size);
-    editor.setStyleForSelectedShapes(DefaultSizeStyle, size);
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const font = e.target.value as TLDefaultFontStyle;
+    editor.setStyleForNextShapes(DefaultFontStyle, font);
+    editor.setStyleForSelectedShapes(DefaultFontStyle, font);
   };
 
   return (
-    <div className="flex items-center gap-2 px-2">
-      <span className="text-[10px] text-[#9A9A9F] w-3">A</span>
-      <input
-        type="range"
-        min={0}
-        max={100}
-        value={sliderValue}
+    <label className="flex items-center gap-2 px-2 border-l border-[#2e2e33] ml-1">
+      <span className="text-[10px] text-[#9A9A9F] uppercase tracking-wide">
+        Font
+      </span>
+      <select
+        value={currentFont}
         onChange={handleChange}
-        className="w-20 h-1 accent-indigo-500 cursor-pointer"
-        title={`Size: ${currentSize.toUpperCase()} (${sliderValue})`}
-      />
-      <span className="text-[13px] text-[#9A9A9F]">A</span>
-    </div>
+        className="h-7 min-w-[132px] rounded border border-[#2E2E33] bg-[#202024] px-2 text-[11px] text-white outline-none"
+        title="Text font"
+      >
+        {Object.entries(FONT_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+});
+
+interface FontSizeControlProps {
+  value: number;
+  onChange: (value: number) => void;
+}
+
+const FontSizeControl = track(function FontSizeControl({
+  value,
+  onChange,
+}: FontSizeControlProps) {
+  const editor = useEditor();
+  const selectedTextShape = editor
+    .getSelectedShapes()
+    .find((shape) => (shape as { type?: string }).type === "text");
+
+  const resolvedValue = (() => {
+    const props = getShapeProps(selectedTextShape);
+    if (!props?.size) return value;
+    const base = BASE_TEXT_SIZES[props.size];
+    const scale = props.scale ?? 1;
+    return Math.max(8, Math.round(base * scale));
+  })();
+
+  return (
+    <label className="flex items-center gap-2 px-2 border-l border-[#2e2e33] ml-1">
+      <span className="text-[10px] text-[#9A9A9F] uppercase tracking-wide">
+        Size
+      </span>
+      <select
+        value={resolvedValue}
+        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        className="h-7 w-[74px] rounded border border-[#2E2E33] bg-[#202024] px-2 text-[11px] text-white outline-none"
+        title="Text size"
+      >
+        {TEXT_SIZE_OPTIONS.map((size) => (
+          <option key={size} value={size}>
+            {size}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 });
 
 // ─── Page navigation component ────────────────────────────────────────────────
 const PageNav = track(function PageNav() {
   const editor = useEditor();
+  const isReadOnly = useNotesStore((s) => s.isReadOnly);
   const pages = editor.getPages();
   const current = editor.getCurrentPage();
   const idx = pages.findIndex((p) => p.id === current.id);
@@ -102,7 +207,7 @@ const PageNav = track(function PageNav() {
   const next = () => {
     if (idx < pages.length - 1) {
       editor.setCurrentPage(pages[idx + 1]);
-    } else {
+    } else if (!isReadOnly) {
       // Add a new page — createPage automatically navigates to it
       editor.createPage({ name: `Page ${pages.length + 1}` });
     }
@@ -126,7 +231,8 @@ const PageNav = track(function PageNav() {
         type="button"
         onClick={next}
         title={idx < pages.length - 1 ? "Next page" : "Add page"}
-        className="w-7 h-7 flex items-center justify-center rounded text-[#9A9A9F] hover:bg-[#2a2a30] transition-colors text-sm"
+        disabled={idx === pages.length - 1 && isReadOnly}
+        className="w-7 h-7 flex items-center justify-center rounded text-[#9A9A9F] hover:bg-[#2a2a30] disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
       >
         {idx < pages.length - 1 ? "›" : "+"}
       </button>
@@ -135,11 +241,41 @@ const PageNav = track(function PageNav() {
 });
 
 // ─── Custom toolbar ───────────────────────────────────────────────────────────
-function CustomToolbar() {
+interface CustomToolbarProps {
+  isReadOnly: boolean;
+  textSize: number;
+  onTextSizeChange: (value: number) => void;
+}
+
+function CustomToolbar({
+  isReadOnly,
+  textSize,
+  onTextSizeChange,
+}: CustomToolbarProps) {
   return (
     <DefaultToolbar>
-      <DefaultToolbarContent />
-      <FontSizeSlider />
+      {!isReadOnly && (
+        <>
+          <SelectToolbarItem />
+          <HandToolbarItem />
+          <DrawToolbarItem />
+          <LaserToolbarItem />
+          <EraserToolbarItem />
+          <ArrowToolbarItem />
+          <TextToolbarItem />
+          <NoteToolbarItem />
+          <AssetToolbarItem />
+          <RectangleToolbarItem />
+          <EllipseToolbarItem />
+          <DiamondToolbarItem />
+          <TriangleToolbarItem />
+          <LineToolbarItem />
+          <HighlightToolbarItem />
+          <FrameToolbarItem />
+          <FontPicker />
+          <FontSizeControl value={textSize} onChange={onTextSizeChange} />
+        </>
+      )}
       <PageNav />
     </DefaultToolbar>
   );
@@ -235,47 +371,111 @@ async function recogniseStroke(
   }
 }
 
-// ─── Stable component map ─────────────────────────────────────────────────────
-const COMPONENTS: TLComponents = {
-  Toolbar: CustomToolbar,
-  // Render our sidebar inside the tldraw context so useEditor() works
-  InFrontOfTheCanvas: track(function InFrontOfTheCanvas() {
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 300,
-          pointerEvents: "auto",
-        }}
-      >
-        <Sidebar />
-      </div>
-    );
-  }),
-};
-
 // ─── Main canvas component ────────────────────────────────────────────────────
 interface TldrawCanvasProps {
   roomId: string;
 }
 
 export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
+  const isReadOnly = useNotesStore((s) => s.isReadOnly);
+  const [textSize, setTextSize] = useState(24);
+  const isReadOnlyRef = useRef(isReadOnly);
+  const pendingTextSizeRef = useRef(textSize);
+
+  isReadOnlyRef.current = isReadOnly;
+  pendingTextSizeRef.current = textSize;
+
   const store = useSync({
     uri: `${WS_BASE}/connect/${roomId}`,
     assets: ASSET_STORE,
   });
 
+  const handleTextSizeChange = useCallback((value: number) => {
+    const mapped = getMappedTextSize(value);
+    setTextSize(value);
+    pendingTextSizeRef.current = value;
+    const editor = (window as typeof window & { __pengoinEditor?: Editor })
+      .__pengoinEditor;
+    if (!editor) return;
+
+    editor.setStyleForNextShapes(DefaultSizeStyle, mapped.size);
+
+    const updates = editor
+      .getSelectedShapes()
+      .filter((shape) => (shape as { type?: string }).type === "text")
+      .map((shape) => ({
+        id: shape.id,
+        type: "text" as const,
+        props: {
+          size: mapped.size,
+          scale: mapped.scale,
+        },
+      }));
+
+    if (updates.length > 0) {
+      editor.updateShapes(updates);
+    }
+  }, []);
+
+  const components = useMemo<TLComponents>(
+    () => ({
+      Toolbar: () => (
+        <CustomToolbar
+          isReadOnly={isReadOnly}
+          textSize={textSize}
+          onTextSizeChange={handleTextSizeChange}
+        />
+      ),
+      // Render our sidebar inside the tldraw context so useEditor() works
+      InFrontOfTheCanvas: track(function InFrontOfTheCanvas() {
+        return (
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 300,
+              pointerEvents: "auto",
+            }}
+          >
+            <Sidebar />
+          </div>
+        );
+      }),
+    }),
+    [handleTextSizeChange, isReadOnly, textSize]
+  );
+
   const handleMount = useCallback((editor: Editor) => {
+    (window as typeof window & { __pengoinEditor?: Editor }).__pengoinEditor =
+      editor;
     editor.updateInstanceState({ isGridMode: false });
+    editor.setCurrentTool(isReadOnlyRef.current ? "hand" : "select");
 
     // AI assist — listen for completed draw shapes
     const unsubscribe = editor.store.listen(
       (entry) => {
         if (entry.source !== "user") return;
         for (const record of Object.values(entry.changes.added)) {
+          if (
+            (record as { type?: string }).type === "text" &&
+            pendingTextSizeRef.current
+          ) {
+            const mapped = getMappedTextSize(pendingTextSizeRef.current);
+            editor.updateShapes([
+              {
+                id: record.id as TLShapeId,
+                type: "text",
+                props: {
+                  size: mapped.size,
+                  scale: mapped.scale,
+                },
+              },
+            ]);
+          }
+
+          if (isReadOnlyRef.current) continue;
           if (
             record.typeName === "shape" &&
             (record as { type: string }).type === "draw"
@@ -351,8 +551,28 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
     return () => {
       unsubscribe();
       delete window.exportWhiteboard;
+      delete (window as typeof window & { __pengoinEditor?: Editor })
+        .__pengoinEditor;
     };
   }, []);
+
+  const editorRef = useRef<Editor | null>(null);
+
+  const handleEditorMount = useCallback(
+    (editor: Editor) => {
+      editorRef.current = editor;
+      return handleMount(editor);
+    },
+    [handleMount]
+  );
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    editorRef.current.setCurrentTool(isReadOnly ? "hand" : "select");
+    if (isReadOnly) {
+      editorRef.current.blur({ blurContainer: true });
+    }
+  }, [isReadOnly]);
 
   if (store.status === "loading") {
     return (
@@ -391,11 +611,19 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
 
   return (
     <div className="absolute inset-0 w-full h-full">
+      <div
+        className={`absolute inset-0 z-[250] ${isReadOnly ? "pointer-events-auto" : "pointer-events-none"}`}
+        style={{
+          left: "var(--sidebar-width)",
+          bottom: 72,
+          top: 0,
+        }}
+      />
       <Tldraw
         store={store.store}
-        onMount={handleMount}
+        onMount={handleEditorMount}
         inferDarkMode
-        components={COMPONENTS}
+        components={components}
       />
     </div>
   );

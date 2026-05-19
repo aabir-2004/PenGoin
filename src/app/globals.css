@@ -4,6 +4,10 @@
   --background: #0f0f11;
   --foreground: #f4f4f6;
   --sidebar-width: 220px;
+  --tl-font-draw: "Arial Black", Arial, Helvetica, sans-serif;
+  --tl-font-sans: Calibri, "Segoe UI", Arial, sans-serif;
+  --tl-font-serif: "Times New Roman", Times, serif;
+  --tl-font-mono: Georgia, "Palatino Linotype", serif;
 }
 
 @theme inline {

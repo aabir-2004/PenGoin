@@ -2,6 +2,7 @@
 
 import { useEditor, track, TLPage } from "tldraw";
 import { Plus, Trash2 } from "lucide-react";
+import { useNotesStore } from "@/store/useNotesStore";
 
 /**
  * Sidebar — shows tldraw pages as slides.
@@ -9,6 +10,7 @@ import { Plus, Trash2 } from "lucide-react";
  */
 const Sidebar = track(function Sidebar() {
   const editor = useEditor();
+  const isReadOnly = useNotesStore((s) => s.isReadOnly);
   const pages = editor.getPages();
   const currentPage = editor.getCurrentPage();
 
@@ -36,7 +38,8 @@ const Sidebar = track(function Sidebar() {
         <button
           type="button"
           onClick={addPage}
-          className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#202024] hover:bg-[#28282D] text-xs text-[#F4F4F6] border border-[#2E2E33] rounded-lg transition-colors cursor-pointer"
+          disabled={isReadOnly}
+          className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#202024] hover:bg-[#28282D] disabled:hover:bg-[#202024] text-xs text-[#F4F4F6] border border-[#2E2E33] rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus size={14} />
           Add page
@@ -66,7 +69,7 @@ const Sidebar = track(function Sidebar() {
                   {page.name}
                 </span>
               </div>
-              {pages.length > 1 && (
+              {pages.length > 1 && !isReadOnly && (
                 <button
                   type="button"
                   onClick={(e) => deletePage(e, page)}

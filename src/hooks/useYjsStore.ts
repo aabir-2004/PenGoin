@@ -48,7 +48,16 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
       if (recordsToUpdate.length || recordsToRemove.length) {
         store.mergeRemoteChanges(() => {
           if (recordsToRemove.length) store.remove(recordsToRemove);
-          if (recordsToUpdate.length) store.put(recordsToUpdate);
+          if (recordsToUpdate.length) {
+            try {
+              store.put(recordsToUpdate);
+            } catch (e) {
+              console.warn("Bulk update failed, trying individually", e);
+              recordsToUpdate.forEach(r => {
+                try { store.put([r]); } catch (err) { console.error("Skipped bad record:", r.id); }
+              });
+            }
+          }
         });
       }
     });
@@ -86,7 +95,14 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
       } else {
         // Apply remote records to local store
         store.mergeRemoteChanges(() => {
-          store.put(records);
+          try {
+            store.put(records);
+          } catch (e) {
+            console.warn("Bulk load failed, trying individually", e);
+            records.forEach(r => {
+              try { store.put([r]); } catch (err) { console.error("Skipped bad record on load:", r.id); }
+            });
+          }
         });
       }
       setStoreWithStatus({ status: 'synced', store, yDoc });

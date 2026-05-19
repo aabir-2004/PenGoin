@@ -6,8 +6,6 @@ import { useNotesStore } from "@/store/useNotesStore";
 import { useYjsStore } from "@/hooks/useYjsStore";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-
-type CameraState = Record<string, unknown>;
 const USER_ID_STORAGE_KEY = "pengoin-user-id";
 const BOARD_BACKGROUND = "#09090A";
 
@@ -130,28 +128,8 @@ export default function Whiteboard() {
   useEffect(() => {
     const myId = getOrCreateUserId();
     const amIPresenting = presenterId === myId;
-    const isFollowing = !!presenterId && !amIPresenting;
-    setPresenterState(amIPresenting, isFollowing);
+    setPresenterState(amIPresenting, false);
   }, [presenterId, setPresenterState]);
-
-  // Camera sync for presenter
-  useEffect(() => {
-    if (storeState.status !== 'synced' || !storeState.yDoc || !excalidrawAPI) return;
-    const yMeta = storeState.yDoc.getMap<CameraState | string | null>('meta');
-    const myId = getOrCreateUserId();
-
-    if (presenterId && presenterId !== myId) {
-      // Follow presenter's scroll position
-      const handleCameraChange = () => {
-        const cam = yMeta.get('camera');
-        if (cam) {
-          excalidrawAPI.scrollToContent(excalidrawAPI.getSceneElements(), { fitToContent: false });
-        }
-      };
-      yMeta.observe(handleCameraChange);
-      return () => yMeta.unobserve(handleCameraChange);
-    }
-  }, [storeState, excalidrawAPI, presenterId]);
 
   // Expose toggle presenter to TopBar
   useEffect(() => {

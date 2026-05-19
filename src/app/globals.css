@@ -39,38 +39,59 @@ body {
   background: #09090a !important;
 }
 
-/* Place the main toolbar a bit lower under the app header */
+/* Dock the main toolbar above the footer controls */
 .excalidraw .App-toolbar-container {
   position: fixed !important;
-  top: 74px !important;
-  bottom: auto !important;
+  top: auto !important;
+  bottom: 92px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  z-index: 30 !important;
+  z-index: 35 !important;
 }
 
-/* Move the shape toolbar to bottom as well */
+/* Make the toolbar clearly readable against the blackboard */
 .excalidraw .App-toolbar {
-  background: rgba(20, 20, 22, 0.92) !important;
-  backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48) !important;
-  padding: 8px 12px !important;
+  background: rgba(246, 246, 250, 0.97) !important;
+  color: #16161a !important;
+  backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(18, 18, 22, 0.12) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35) !important;
+  padding: 10px 14px !important;
 }
 
 /* Style toolbar buttons */
 .excalidraw .ToolIcon__icon {
   border-radius: 10px !important;
+  color: #17171c !important;
+}
+
+.excalidraw .App-toolbar .ToolIcon__icon svg,
+.excalidraw .App-toolbar .ToolIcon__icon,
+.excalidraw .App-toolbar .ToolIcon__keybinding,
+.excalidraw .App-toolbar .HintViewer {
+  color: #17171c !important;
+  stroke: currentColor !important;
+  opacity: 0.92 !important;
 }
 
 .excalidraw .ToolIcon__icon:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(23, 23, 28, 0.08) !important;
 }
 
 .excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon,
 .excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon {
-  background: rgba(122, 90, 248, 0.22) !important;
+  background: rgba(122, 90, 248, 0.18) !important;
+  color: #4e35cc !important;
+}
+
+.excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon svg,
+.excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon svg {
+  color: #4e35cc !important;
+}
+
+.excalidraw .App-toolbar__divider {
+  background: rgba(23, 23, 28, 0.12) !important;
 }
 
 /* Hide the top bar welcome screen / help menu */

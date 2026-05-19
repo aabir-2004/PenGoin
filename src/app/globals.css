@@ -34,64 +34,61 @@ body {
    Excalidraw UI Overrides — PenGoin Theme
    ======================================== */
 
-/* Move the main toolbar to the bottom of the canvas */
+/* Move the main toolbar to the bottom of the canvas, centered */
 .excalidraw .App-toolbar-container {
-  position: fixed !important;
-  bottom: 24px !important;
+  position: absolute !important;
+  bottom: 28px !important;
   top: auto !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 35 !important;
   width: auto !important;
-  max-width: min(760px, calc(100vw - 440px)) !important;
 }
 
-/* Make the toolbar clearly readable against the blackboard */
+/* Dark pill toolbar matching the app theme */
 .excalidraw .App-toolbar {
-  background: rgba(246, 246, 250, 0.97) !important;
-  color: #16161a !important;
+  background: #1c1c20 !important;
+  color: #f4f4f6 !important;
+  -webkit-backdrop-filter: blur(18px) !important;
   backdrop-filter: blur(18px) !important;
-  border: 1px solid rgba(18, 18, 22, 0.12) !important;
+  border: 1px solid #2e2e33 !important;
   border-radius: 22px !important;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35) !important;
-  padding: 10px 14px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+  padding: 8px 12px !important;
   width: auto !important;
-  min-width: 620px !important;
-  max-width: min(760px, calc(100vw - 440px)) !important;
 }
 
-/* Style toolbar buttons */
+/* Style toolbar buttons for dark theme */
 .excalidraw .ToolIcon__icon {
   border-radius: 10px !important;
-  color: #17171c !important;
+  color: #c8c8d0 !important;
 }
 
 .excalidraw .App-toolbar .ToolIcon__icon svg,
 .excalidraw .App-toolbar .ToolIcon__icon,
 .excalidraw .App-toolbar .ToolIcon__keybinding,
 .excalidraw .App-toolbar .HintViewer {
-  color: #17171c !important;
-  stroke: currentColor !important;
-  opacity: 0.92 !important;
+  color: #c8c8d0 !important;
+  opacity: 0.9 !important;
 }
 
 .excalidraw .ToolIcon__icon:hover {
-  background: rgba(23, 23, 28, 0.08) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon,
 .excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon {
-  background: rgba(122, 90, 248, 0.18) !important;
-  color: #4e35cc !important;
+  background: rgba(122, 90, 248, 0.25) !important;
+  color: #a78bfa !important;
 }
 
 .excalidraw .ToolIcon_type_radio--checked .ToolIcon__icon svg,
 .excalidraw .ToolIcon_type_checkbox--checked .ToolIcon__icon svg {
-  color: #4e35cc !important;
+  color: #a78bfa !important;
 }
 
 .excalidraw .App-toolbar__divider {
-  background: rgba(23, 23, 28, 0.12) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .excalidraw .App-toolbar-content {
@@ -99,11 +96,11 @@ body {
   gap: 2px !important;
 }
 
-/* Hide the top bar welcome screen / help menu */
+/* Keep top-right UI (save status, etc.) at the top */
 .excalidraw .layer-ui__wrapper__top-right {
-  top: auto !important;
-  bottom: 28px !important;
-  right: 24px !important;
+  top: 12px !important;
+  bottom: auto !important;
+  right: 16px !important;
 }
 
 /* Hide the library icon to keep it clean */
@@ -114,6 +111,7 @@ body {
 /* Style sidebar panels (properties, colors, etc.) */
 .excalidraw .App-menu {
   background: rgba(22, 22, 25, 0.95) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   backdrop-filter: blur(16px) !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: 14px !important;

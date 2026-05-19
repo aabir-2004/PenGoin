@@ -39,14 +39,16 @@ body {
   background: #09090a !important;
 }
 
-/* Dock the main toolbar above the footer controls */
+/* Keep the main toolbar clearly visible below the app header */
 .excalidraw .App-toolbar-container {
   position: fixed !important;
-  top: auto !important;
-  bottom: 92px !important;
+  top: 108px !important;
+  bottom: auto !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 35 !important;
+  width: auto !important;
+  max-width: min(760px, calc(100vw - 440px)) !important;
 }
 
 /* Make the toolbar clearly readable against the blackboard */
@@ -58,6 +60,9 @@ body {
   border-radius: 22px !important;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35) !important;
   padding: 10px 14px !important;
+  width: auto !important;
+  min-width: 620px !important;
+  max-width: min(760px, calc(100vw - 440px)) !important;
 }
 
 /* Style toolbar buttons */
@@ -92,6 +97,11 @@ body {
 
 .excalidraw .App-toolbar__divider {
   background: rgba(23, 23, 28, 0.12) !important;
+}
+
+.excalidraw .App-toolbar-content {
+  justify-content: center !important;
+  gap: 2px !important;
 }
 
 /* Hide the top bar welcome screen / help menu */
@@ -136,27 +146,27 @@ body {
   border-radius: 2px;
 }
 
-/* Hide Excalidraw's built-in grid so only the custom blackboard texture remains */
+/* Keep Excalidraw's native grid visible so canvas panning is perceptible */
 .excalidraw svg.Grid {
-  display: none !important;
+  display: block !important;
 }
 
-/* Blackboard-style sparse dot grid */
+/* Blackboard background */
 .excalidraw .excalidraw__canvas-wrapper,
 .excalidraw .interactive.excalidraw__canvas,
 .excalidraw canvas.excalidraw__canvas {
   background-color: #09090a !important;
-  background-image:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0.8px, transparent 0.9px),
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 38%) !important;
-  background-size: 28px 28px, 100% 100% !important;
-  background-position: 0 0, center center !important;
+  background-image: radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 38%) !important;
+  background-size: 100% 100% !important;
+  background-position: center center !important;
 }
 
-/* Ensure no dashed grid treatment appears anywhere */
+/* Sparse, subtle solid grid on the blackboard */
 .excalidraw .Grid line,
 .excalidraw .Grid path {
-  display: none !important;
+  display: block !important;
+  stroke: rgba(255, 255, 255, 0.08) !important;
+  stroke-width: 1 !important;
   stroke-dasharray: none !important;
 }
 

@@ -226,7 +226,7 @@ export default function Whiteboard() {
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
           onChange={handleChange}
           theme="light"
-          gridModeEnabled={false}
+          gridModeEnabled={true}
           viewModeEnabled={effectivelyReadOnly}
           UIOptions={{
             canvasActions: {
@@ -236,6 +236,7 @@ export default function Whiteboard() {
           initialData={{
             appState: {
               theme: "light",
+              gridSize: 32,
               viewBackgroundColor: BOARD_BACKGROUND,
             },
           }}

@@ -40,6 +40,16 @@ body {
   background-color: #09090a !important;
 }
 
+/* Dot grid — purely visual, drawn via CSS on the canvas wrapper.
+   Uses radial-gradient to paint a small dot at each grid intersection.
+   Grid spacing matches the 32px reference size at 100% zoom. */
+.excalidraw.excalidraw--dark .excalidraw__canvas-wrapper,
+.excalidraw.excalidraw--dark .interactive {
+  background-color: #09090a !important;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px) !important;
+  background-size: 32px 32px !important;
+}
+
 /* Dark pill toolbar — let Excalidraw position it naturally, just restyle it */
 .excalidraw .App-toolbar {
   background: #1c1c20 !important;
@@ -140,18 +150,7 @@ body {
   border-radius: 2px;
 }
 
-/* Keep Excalidraw's native grid visible */
-.excalidraw .Grid {
-  display: block !important;
-}
-
-/* Ensure the grid dots/lines are visible on the dark background */
-.excalidraw .Grid line,
-.excalidraw .Grid path,
-.excalidraw .Grid circle {
-  display: block !important;
-  opacity: 1 !important;
-}
+/* Excalidraw's built-in SVG grid is disabled — we use CSS dot grid instead */
 
 .excalidraw .layer-ui__wrapper__footer-left,
 .excalidraw .layer-ui__wrapper__footer-right {

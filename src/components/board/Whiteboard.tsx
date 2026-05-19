@@ -9,10 +9,9 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 const USER_ID_STORAGE_KEY = "pengoin-user-id";
 const BOARD_BACKGROUND = "#09090A";
 
-/** Default stroke/fill for dark blackboard — light theme on dark bg made shapes invisible */
+/** Default stroke/fill for dark blackboard */
 const DEFAULT_APP_STATE = {
   theme: "dark" as const,
-  gridSize: 32,
   viewBackgroundColor: BOARD_BACKGROUND,
   currentItemStrokeColor: "#FFFFFF",
   currentItemBackgroundColor: "transparent",
@@ -262,7 +261,7 @@ export default function Whiteboard() {
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
           onChange={handleChange}
           theme="dark"
-          gridModeEnabled={true}
+          gridModeEnabled={false}
           viewModeEnabled={effectivelyReadOnly}
           UIOptions={{
             canvasActions: {
@@ -275,7 +274,6 @@ export default function Whiteboard() {
               viewBackgroundColor: BOARD_BACKGROUND,
               currentItemStrokeColor: "#FFFFFF",
               currentItemBackgroundColor: "transparent",
-              gridSize: 32,
             },
           }}
         />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createTLStore, defaultShapeUtils, TLRecord } from 'tldraw';
+import { createTLStore, defaultShapeUtils, TLRecord, createShapeId } from 'tldraw';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { MathShapeUtil } from '../components/board/shapes/MathShape';
@@ -54,7 +54,20 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
             } catch (e) {
               console.warn("Bulk update failed, trying individually", e);
               recordsToUpdate.forEach(r => {
-                try { store.put([r]); } catch (err) { console.error("Skipped bad record:", r.id); }
+                try { 
+                  store.put([r]); 
+                } catch (err) { 
+                  console.error("Auto-healing bad record:", r.id); 
+                  if (r.typeName === 'shape') {
+                    yDoc.transact(() => {
+                      const newId = createShapeId();
+                      yStore.set(newId, { ...r, id: newId });
+                      yStore.delete(r.id);
+                    }, 'local');
+                  } else {
+                    yDoc.transact(() => yStore.delete(r.id), 'local');
+                  }
+                }
               });
             }
           }
@@ -100,7 +113,20 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
           } catch (e) {
             console.warn("Bulk load failed, trying individually", e);
             records.forEach(r => {
-              try { store.put([r]); } catch (err) { console.error("Skipped bad record on load:", r.id); }
+              try { 
+                store.put([r]); 
+              } catch (err) { 
+                console.error("Auto-healing bad record on load:", r.id); 
+                if (r.typeName === 'shape') {
+                  yDoc.transact(() => {
+                    const newId = createShapeId();
+                    yStore.set(newId, { ...r, id: newId });
+                    yStore.delete(r.id);
+                  }, 'local');
+                } else {
+                  yDoc.transact(() => yStore.delete(r.id), 'local');
+                }
+              }
             });
           }
         });

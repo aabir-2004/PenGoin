@@ -1,211 +1,74 @@
 "use client";
 
-import { Tldraw, useEditor, useValue, TLTextShape, createShapeId } from "tldraw";
-import "tldraw/tldraw.css";
-import { useEffect, useState, Component, ErrorInfo, ReactNode } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useNotesStore } from "@/store/useNotesStore";
+import { useYjsStore } from "@/hooks/useYjsStore";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
-class CanvasErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
-  state: {hasError: boolean, error: Error | null} = { hasError: false, error: null };
-  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Canvas crashed:", error, errorInfo); }
-  render() {
-    if (this.state.hasError) {
-      return <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0F0F11] text-red-400 p-8 font-mono text-xs z-[9999]"><h2 className="text-lg font-bold mb-4">Canvas Error</h2><pre className="whitespace-pre-wrap">{this.state.error?.message}</pre></div>;
-    }
-    return this.props.children;
-  }
-}
+// Excalidraw must be loaded client-side only (no SSR)
+const Excalidraw = dynamic(
+  async () => (await import("@excalidraw/excalidraw")).Excalidraw,
+  { ssr: false }
+);
 
+// Dynamically import export utilities  
+const getExportUtils = () => import("@excalidraw/excalidraw");
 
-// Hook to apply custom logic and markdown shortcuts
-function PenGoinLogic() {
-  const editor = useEditor();
+export default function Whiteboard() {
+  const { activeNoteId, isFollowingPresenter, isReadOnly } = useNotesStore();
+  const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
+  const isRemoteUpdateRef = useRef(false);
 
+  const storeState = useYjsStore({
+    roomId: activeNoteId || "default",
+    hostUrl: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 
+      (typeof window !== 'undefined' ? `ws://${window.location.hostname}:1234` : "ws://localhost:1234"),
+  });
+
+  // Subscribe to remote Yjs changes and push them into Excalidraw
   useEffect(() => {
-    // 1. Blackboard (Dark Mode) + Grid Mode
-    editor.user.updateUserPreferences({ colorScheme: "dark" });
-    editor.updateInstanceState({ isGridMode: true });
+    if (storeState.status !== 'synced' || !excalidrawAPI) return;
 
-    // 2. Markdown Shortcuts
-    const cleanup = editor.store.listen((change) => {
-      if (change.source !== 'user') return; // PREVENT SYNC LOOPS
-
-      const updated = change.changes.updated;
-      for (const record of Object.values(updated)) {
-        const next = record[1] as any;
-
-        if (next.typeName === "shape" && next.type === "text") {
-          // If shape is marked to ignore markdown, skip scaling
-          if (next.meta?.ignoreMarkdown) continue;
-
-          const util = editor.getShapeUtil(next);
-          const nextText = (util as any).getText(next) as string;
-
-          let newScale = 1; // Default
-          let isHeading = false;
-
-          // Slash Command: Equation block
-          if (nextText === "/math ") {
-             editor.deleteShape(next.id);
-             const newId = createShapeId();
-             editor.createShape({
-                 id: newId,
-                 type: "math",
-                 x: next.x,
-                 y: next.y,
-                 props: { equation: "\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}" }
-             } as any);
-             editor.setEditingShape(newId);
-             editor.select(newId);
-             continue; 
-          }
-
-          // Slash Command: Code block
-          if (nextText === "/code ") {
-             editor.deleteShape(next.id);
-             const newId = createShapeId();
-             editor.createShape({
-                 id: newId,
-                 type: "code",
-                 x: next.x,
-                 y: next.y,
-                 props: { code: "function helloWorld() {\n  console.log('Hello from PenGoin!');\n}", language: "javascript" }
-             } as any);
-             editor.setEditingShape(newId);
-             editor.select(newId);
-             continue; 
-          }
-
-          const h1Match = nextText.match(/^#\s*(.*)/);
-          const h2Match = nextText.match(/^##\s*(.*)/);
-          const h3Match = nextText.match(/^###\s*(.*)/);
-
-          if (h3Match) {
-            newScale = 1.3; // h3
-            isHeading = true;
-          } else if (h2Match) {
-            newScale = 1.8; // h2
-            isHeading = true;
-          } else if (h1Match) {
-            newScale = 2.5; // h1
-            isHeading = true;
-          }
-
-          const currentScale = next.props.scale ?? 1;
-
-          if (isHeading && currentScale !== newScale) {
-            editor.updateShape({
-              id: next.id,
-              type: "text",
-              props: { scale: newScale },
-            });
-          }
-        }
-      }
+    const unsubscribe = storeState.onRemoteChange((elements) => {
+      isRemoteUpdateRef.current = true;
+      excalidrawAPI.updateScene({ elements });
+      // Reset after a microtask to allow onChange to fire and be ignored
+      queueMicrotask(() => { isRemoteUpdateRef.current = false; });
     });
 
-    // 3. Handle Backspace at index 0 to remove heading format
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Backspace") {
-        const activeEl = document.activeElement as HTMLTextAreaElement;
-        // Check if editing a textarea and cursor is at the very beginning
-        if (activeEl && activeEl.tagName === "TEXTAREA") {
-          if (activeEl.selectionStart === 0 && activeEl.selectionEnd === 0) {
-            const editingId = editor.getEditingShapeId();
-            if (editingId) {
-              const shape = editor.getShape(editingId) as any;
-              if (shape && shape.type === "text") {
-                const currentScale = shape.props.scale ?? 1;
-                if (currentScale > 1) {
-                  // Revert to normal text but keep the # text
-                  editor.updateShape({
-                    id: shape.id,
-                    type: "text",
-                    props: { scale: 1 },
-                    meta: { ...shape.meta, ignoreMarkdown: true },
-                  });
-                  // Prevent the browser from doing anything else with this backspace
-                  e.stopPropagation();
-                  e.preventDefault();
-                }
-              }
-            }
-          }
-        }
-      }
-    };
+    return unsubscribe;
+  }, [storeState, excalidrawAPI]);
 
-    window.addEventListener("keydown", handleKeyDown, { capture: true });
+  // Push initial elements into Excalidraw once API is ready
+  useEffect(() => {
+    if (storeState.status !== 'synced' || !excalidrawAPI) return;
+    if (storeState.initialElements.length > 0) {
+      isRemoteUpdateRef.current = true;
+      excalidrawAPI.updateScene({ elements: storeState.initialElements });
+      queueMicrotask(() => { isRemoteUpdateRef.current = false; });
+    }
+  }, [storeState.status, excalidrawAPI]);
 
-    return () => {
-      cleanup();
-      window.removeEventListener("keydown", handleKeyDown, { capture: true });
-    };
-  }, [editor]);
-
-  return null;
-}
-
-// Custom UI overlay for precise text sizing
-function TextSizeDropdown() {
-  const editor = useEditor();
-  const { isFollowingPresenter } = useNotesStore();
-  const selectedShapes = useValue(
-    "selectedShapes",
-    () => editor.getSelectedShapes(),
-    [editor]
+  // Handle local changes → push to Yjs
+  const handleChange = useCallback(
+    (elements: readonly ExcalidrawElement[]) => {
+      if (storeState.status !== 'synced') return;
+      // Don't echo remote changes back to Yjs
+      if (isRemoteUpdateRef.current) return;
+      storeState.pushElements(elements);
+    },
+    [storeState]
   );
 
-  if (isFollowingPresenter) return null;
-
-  const textShapes = selectedShapes.filter((s) => s.type === "text") as TLTextShape[];
-
-  if (textShapes.length === 0) return null;
-
-  const firstShape = textShapes[0];
-  const currentScale = firstShape.props.scale ?? 1;
-  const currentPixelSize = Math.round(currentScale * 24);
-
-  const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSize = parseInt(e.target.value, 10);
-    const newScale = newSize / 24;
-
-    editor.markHistoryStoppingPoint("change text size");
-    editor.updateShapes(
-      textShapes.map((s) => ({
-        id: s.id,
-        type: "text",
-        props: { scale: newScale },
-      }))
-    );
-  };
-
-  return (
-    <div className="absolute top-4 right-4 bg-[#202024] p-2 rounded-lg border border-[#26262B] shadow-lg flex items-center gap-2 pointer-events-auto z-[9999]">
-      <span className="text-xs text-[#9A9A9F] font-medium ml-1">Font Size:</span>
-      <select
-        className="bg-[#161619] text-white text-xs font-medium border border-[#36363B] rounded px-2 py-1 outline-none cursor-pointer hover:bg-[#28282D] transition-colors"
-        value={currentPixelSize}
-        onChange={handleSizeChange}
-      >
-        {[12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 120].map((size) => (
-          <option key={size} value={size}>
-            {size}px
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function PresenterLogic({ yDoc }: { yDoc: any }) {
-  const editor = useEditor();
+  // === Presenter Logic ===
   const { setPresenterState } = useNotesStore();
   const [presenterId, setPresenterId] = useState<string | null>(null);
 
   useEffect(() => {
-    const yMeta = yDoc.getMap('meta');
+    if (storeState.status !== 'synced' || !storeState.yDoc) return;
+    const yMeta = storeState.yDoc.getMap('meta');
 
     const handleMetaChange = () => {
       const pId = yMeta.get('presenterId') as string | undefined;
@@ -215,126 +78,144 @@ function PresenterLogic({ yDoc }: { yDoc: any }) {
     yMeta.observe(handleMetaChange);
     handleMetaChange();
 
-    let unsubscribeCamera: () => void;
-    if (presenterId === editor.user.getId()) {
-      unsubscribeCamera = editor.store.listen((change) => {
-        if (change.source !== 'user') return; // PREVENT SYNC LOOPS
-        
-        const camera = editor.getCamera();
-        const prevCam = yMeta.get('camera') as any;
-        if (!prevCam || prevCam.x !== camera.x || prevCam.y !== camera.y || prevCam.z !== camera.z) {
-          yMeta.set('camera', { x: camera.x, y: camera.y, z: camera.z });
-        }
-      }, { scope: 'session' });
-    }
+    return () => yMeta.unobserve(handleMetaChange);
+  }, [storeState.status, storeState.yDoc]);
 
-    return () => {
-      yMeta.unobserve(handleMetaChange);
-      if (unsubscribeCamera) unsubscribeCamera();
-    };
-  }, [editor, presenterId, yDoc]);
-
+  // Update presenter state in zustand
   useEffect(() => {
-    if (presenterId && presenterId !== editor.user.getId()) {
-      const yMeta = yDoc.getMap('meta');
+    const myId = typeof window !== 'undefined' ? (window as any).__pengoin_user_id : null;
+    const amIPresenting = presenterId === myId;
+    const isFollowing = !!presenterId && !amIPresenting;
+    setPresenterState(amIPresenting, isFollowing);
+  }, [presenterId, setPresenterState]);
+
+  // Camera sync for presenter
+  useEffect(() => {
+    if (storeState.status !== 'synced' || !storeState.yDoc || !excalidrawAPI) return;
+    const yMeta = storeState.yDoc.getMap('meta');
+    const myId = typeof window !== 'undefined' ? (window as any).__pengoin_user_id : null;
+
+    if (presenterId && presenterId !== myId) {
+      // Follow presenter's scroll position
       const handleCameraChange = () => {
         const cam = yMeta.get('camera') as any;
         if (cam) {
-          editor.setCamera({ x: cam.x, y: cam.y, z: cam.z });
+          excalidrawAPI.scrollToContent(undefined as any, { fitToContent: false });
         }
       };
       yMeta.observe(handleCameraChange);
-      handleCameraChange();
       return () => yMeta.unobserve(handleCameraChange);
     }
-  }, [editor, presenterId, yDoc]);
+  }, [storeState, excalidrawAPI, presenterId]);
 
+  // Expose toggle presenter to TopBar
   useEffect(() => {
-    const amIPresenting = presenterId === editor.user.getId();
-    const isFollowing = !!presenterId && !amIPresenting;
-    setPresenterState(amIPresenting, isFollowing);
+    if (storeState.status !== 'synced' || !storeState.yDoc) return;
+    
+    // Generate a stable user ID for this session
+    if (typeof window !== 'undefined' && !(window as any).__pengoin_user_id) {
+      (window as any).__pengoin_user_id = crypto.randomUUID();
+    }
+    const myId = (window as any).__pengoin_user_id;
 
     (window as any).togglePresenter = () => {
-       const yMeta = yDoc.getMap('meta');
-       const currentId = yMeta.get('presenterId');
-       if (currentId === editor.user.getId()) {
-           yMeta.set('presenterId', null); 
-       } else {
-           yMeta.set('presenterId', editor.user.getId()); 
-       }
+      const yMeta = storeState.yDoc!.getMap('meta');
+      const currentId = yMeta.get('presenterId');
+      if (currentId === myId) {
+        yMeta.set('presenterId', null);
+      } else {
+        yMeta.set('presenterId', myId);
+      }
     };
-  }, [editor, presenterId, yDoc, setPresenterState]);
 
-  return null;
-}
+    return () => { delete (window as any).togglePresenter; };
+  }, [storeState]);
 
-import { useYjsStore } from "@/hooks/useYjsStore";
-import { exportAs } from "tldraw";
-
-import { MathShapeUtil } from "./shapes/MathShape";
-import { CodeShapeUtil } from "./shapes/CodeShape";
-
-function ExportLogic() {
-  const editor = useEditor();
-  
+  // Expose export to TopBar
   useEffect(() => {
+    if (!excalidrawAPI) return;
+
     (window as any).exportWhiteboard = async (format: 'png' | 'svg' = 'png') => {
-      const shapeIds = Array.from(editor.getCurrentPageShapeIds());
-      if (shapeIds.length === 0) return alert("Nothing to export!");
-      
       try {
-        await exportAs(editor, shapeIds, { format });
+        const { exportToBlob, exportToSvg } = await getExportUtils();
+        const elements = excalidrawAPI.getSceneElements();
+        if (elements.length === 0) {
+          alert("Nothing to export!");
+          return;
+        }
+
+        if (format === 'svg') {
+          const svg = await exportToSvg({
+            elements,
+            appState: excalidrawAPI.getAppState(),
+            files: excalidrawAPI.getFiles(),
+          });
+          const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'pengoin-export.svg';
+          a.click();
+          URL.revokeObjectURL(url);
+        } else {
+          const blob = await exportToBlob({
+            elements,
+            appState: excalidrawAPI.getAppState(),
+            files: excalidrawAPI.getFiles(),
+            mimeType: 'image/png',
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'pengoin-export.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
       } catch (e) {
         console.error("Export failed", e);
         alert("Export failed. See console.");
       }
     };
-    
-    return () => {
-      delete (window as any).exportWhiteboard;
-    };
-  }, [editor]);
-  
-  return null;
-}
 
-export default function Whiteboard() {
-  const { activeNoteId, isFollowingPresenter, isReadOnly } = useNotesStore();
+    return () => { delete (window as any).exportWhiteboard; };
+  }, [excalidrawAPI]);
 
-  const storeState = useYjsStore({
-    roomId: activeNoteId || "default",
-    hostUrl: process.env.NEXT_PUBLIC_WEBSOCKET_URL || (typeof window !== 'undefined' ? `ws://${window.location.hostname}:1234` : "ws://localhost:1234"),
-  });
-
+  // === Render ===
   if (!activeNoteId) return null;
 
   if (storeState.status === "loading") {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[#0F0F11]">
-        <div className="text-[#9A9A9F] text-sm font-medium">Connecting to realtime sync server...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="text-[#9A9A9F] text-sm font-medium">Connecting to realtime sync server...</div>
+        </div>
       </div>
     );
   }
 
-  const customShapeUtils = [MathShapeUtil, CodeShapeUtil];
   const effectivelyReadOnly = isReadOnly || isFollowingPresenter;
 
   return (
-    <div style={{ position: "absolute", inset: 0 }} className={isFollowingPresenter ? "pointer-events-none" : ""}>
-      <CanvasErrorBoundary>
-        <Tldraw 
-          key={activeNoteId} 
-          store={storeState.store} 
-          hideUi={isFollowingPresenter} 
-          {...({ isReadOnly: effectivelyReadOnly } as any)}
-          shapeUtils={customShapeUtils}
-        >
-          <PenGoinLogic />
-          <TextSizeDropdown />
-          <PresenterLogic yDoc={storeState.yDoc} />
-          <ExportLogic />
-        </Tldraw>
-      </CanvasErrorBoundary>
+    <div 
+      style={{ position: "absolute", inset: 0 }} 
+      className={isFollowingPresenter ? "pointer-events-none" : ""}
+    >
+      <Excalidraw
+        key={activeNoteId}
+        excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
+        onChange={handleChange}
+        theme="dark"
+        gridModeEnabled={true}
+        viewModeEnabled={effectivelyReadOnly}
+        initialData={{
+          appState: {
+            theme: "dark",
+            gridSize: 20,
+            viewBackgroundColor: "#0F0F11",
+          },
+        }}
+      />
     </div>
   );
 }

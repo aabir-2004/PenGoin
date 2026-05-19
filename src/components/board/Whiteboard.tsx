@@ -56,7 +56,7 @@ const Excalidraw = dynamic(
 const getExportUtils = () => import("@excalidraw/excalidraw");
 
 export default function Whiteboard() {
-  const { activeNoteId, isFollowingPresenter, isReadOnly } = useNotesStore();
+  const { activeNoteId, isReadOnly } = useNotesStore();
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
   const isRemoteUpdateRef = useRef(false);
 
@@ -236,19 +236,18 @@ export default function Whiteboard() {
     );
   }
 
-  const effectivelyReadOnly = isReadOnly || isFollowingPresenter;
+  const effectivelyReadOnly = isReadOnly;
 
   return (
     <div 
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} 
-      className={isFollowingPresenter ? "pointer-events-none" : ""}
     >
       <div style={{ width: "100%", height: "100%" }}>
         <Excalidraw
           key={activeNoteId}
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
           onChange={handleChange}
-          theme="dark"
+          theme="light"
           gridModeEnabled={false}
           viewModeEnabled={effectivelyReadOnly}
           UIOptions={{
@@ -258,7 +257,7 @@ export default function Whiteboard() {
           }}
           initialData={{
             appState: {
-              theme: "dark",
+              theme: "light",
               viewBackgroundColor: BOARD_BACKGROUND,
             },
           }}

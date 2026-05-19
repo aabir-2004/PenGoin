@@ -27,6 +27,8 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
       url: providerUrl,
       name: roomId,
       document: yDoc,
+      // @ts-ignore - Prevent postMessage infinite loops across tabs/iframes
+      broadcastChannel: false,
     });
 
     // 1. Sync from Yjs to Tldraw
@@ -57,16 +59,8 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
                 try { 
                   store.put([r]); 
                 } catch (err) { 
-                  console.error("Auto-healing bad record:", r.id); 
-                  if (r.typeName === 'shape') {
-                    yDoc.transact(() => {
-                      const newId = createShapeId();
-                      yStore.set(newId, { ...r, id: newId });
-                      yStore.delete(r.id);
-                    }, 'local');
-                  } else {
-                    yDoc.transact(() => yStore.delete(r.id), 'local');
-                  }
+                  console.error("Dropping bad record:", r.id); 
+                  yDoc.transact(() => yStore.delete(r.id), 'local');
                 }
               });
             }
@@ -116,16 +110,8 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
               try { 
                 store.put([r]); 
               } catch (err) { 
-                console.error("Auto-healing bad record on load:", r.id); 
-                if (r.typeName === 'shape') {
-                  yDoc.transact(() => {
-                    const newId = createShapeId();
-                    yStore.set(newId, { ...r, id: newId });
-                    yStore.delete(r.id);
-                  }, 'local');
-                } else {
-                  yDoc.transact(() => yStore.delete(r.id), 'local');
-                }
+                console.error("Dropping bad record on load:", r.id); 
+                yDoc.transact(() => yStore.delete(r.id), 'local');
               }
             });
           }

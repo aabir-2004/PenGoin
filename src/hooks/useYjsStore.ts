@@ -18,11 +18,19 @@ interface YjsSyncState {
   yDoc: Y.Doc | null;
   provider: HocuspocusProvider | null;
   initialElements: ExcalidrawElement[];
-  pushElements: (elements: readonly ExcalidrawElement[]) => void;
+  pushElements: (elements: readonly ExcalidrawElement[], options?: { allowEmpty?: boolean }) => void;
   onRemoteChange: (callback: (elements: ExcalidrawElement[]) => void) => () => void;
 }
 
-export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: string; hostUrl: string }): YjsSyncState {
+export function useYjsStore({
+  roomId,
+  hostUrl: defaultHostUrl,
+  onOfflineFallback,
+}: {
+  roomId: string;
+  hostUrl: string;
+  onOfflineFallback?: () => void;
+}): YjsSyncState {
   const [state, setState] = useState<YjsSyncState>({
     status: 'loading',
     yDoc: null,
@@ -52,7 +60,12 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
     });
 
     // Push local Excalidraw elements into Yjs
-    const pushElements = (elements: readonly ExcalidrawElement[]) => {
+    const pushElements = (elements: readonly ExcalidrawElement[], options?: { allowEmpty?: boolean }) => {
+      // Excalidraw fires onChange([]) on mount before hydration — never wipe stored elements
+      if (elements.length === 0 && yElements.size > 0 && !options?.allowEmpty) {
+        return;
+      }
+
       isPushingRef.current = true;
       yDoc.transact(() => {
         // Build a set of current element IDs
@@ -93,8 +106,13 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
       return () => yElements.unobserve(observer);
     };
 
-    // Handle initial sync
+    // Handle initial sync (or offline fallback if server is unreachable)
+    let hasSynced = false;
     const handleSync = () => {
+      if (hasSynced) return;
+      hasSynced = true;
+      clearTimeout(syncTimeout);
+
       const elements = Array.from(yElements.values());
       setState({
         status: 'synced',
@@ -108,16 +126,25 @@ export function useYjsStore({ roomId, hostUrl: defaultHostUrl }: { roomId: strin
 
     provider.on('synced', handleSync);
 
-    // Handle connection errors
+    // Proceed offline if sync server is down — don't block the canvas forever
+    const syncTimeout = setTimeout(() => {
+      if (!hasSynced) {
+        console.warn('[PenGoin] Sync server unreachable — using offline mode');
+        onOfflineFallback?.();
+        handleSync();
+      }
+    }, 4000);
+
     provider.on('disconnect', () => {
       console.warn('Hocuspocus disconnected, attempting reconnect...');
     });
 
     return () => {
+      clearTimeout(syncTimeout);
       provider.destroy();
       yDoc.destroy();
     };
-  }, [roomId, defaultHostUrl]);
+  }, [roomId, defaultHostUrl, onOfflineFallback]);
 
   return state;
 }

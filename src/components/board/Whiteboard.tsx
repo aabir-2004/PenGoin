@@ -9,6 +9,15 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 const USER_ID_STORAGE_KEY = "pengoin-user-id";
 const BOARD_BACKGROUND = "#09090A";
 
+/** Default stroke/fill for dark blackboard — light theme on dark bg made shapes invisible */
+const DEFAULT_APP_STATE = {
+  theme: "dark" as const,
+  gridSize: 32,
+  viewBackgroundColor: BOARD_BACKGROUND,
+  currentItemStrokeColor: "#FFFFFF",
+  currentItemBackgroundColor: "transparent",
+};
+
 const getOrCreateUserId = () => {
   if (typeof window === "undefined") {
     return null;
@@ -56,12 +65,17 @@ const getExportUtils = () => import("@excalidraw/excalidraw");
 export default function Whiteboard() {
   const { activeNoteId, isReadOnly } = useNotesStore();
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const isRemoteUpdateRef = useRef(false);
+  const isHydratedRef = useRef(false);
+
+  const handleOfflineFallback = useCallback(() => setIsOffline(true), []);
 
   const storeState = useYjsStore({
     roomId: activeNoteId || "default",
     hostUrl: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 
       (typeof window !== 'undefined' ? `ws://${window.location.hostname}:1234` : "ws://localhost:1234"),
+    onOfflineFallback: handleOfflineFallback,
   });
 
   // Subscribe to remote Yjs changes and push them into Excalidraw
@@ -71,34 +85,48 @@ export default function Whiteboard() {
     const unsubscribe = storeState.onRemoteChange((elements) => {
       isRemoteUpdateRef.current = true;
       excalidrawAPI.updateScene({ elements });
-      // Reset after a microtask to allow onChange to fire and be ignored
-      queueMicrotask(() => { isRemoteUpdateRef.current = false; });
+      // onChange can fire async — keep the guard through the next frame
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          isRemoteUpdateRef.current = false;
+        });
+      });
     });
 
     return unsubscribe;
   }, [storeState, excalidrawAPI]);
 
+  // Reset hydration and offline banner when switching notes
+  useEffect(() => {
+    isHydratedRef.current = false;
+    setIsOffline(false);
+  }, [activeNoteId]);
+
   // Push initial elements into Excalidraw once API is ready
   useEffect(() => {
     if (storeState.status !== 'synced' || !excalidrawAPI) return;
+
+    isHydratedRef.current = false;
+    isRemoteUpdateRef.current = true;
+
     excalidrawAPI.updateScene({
-      appState: {
-        viewBackgroundColor: BOARD_BACKGROUND,
-      },
+      appState: DEFAULT_APP_STATE,
+      ...(storeState.initialElements.length > 0
+        ? { elements: storeState.initialElements }
+        : {}),
     });
 
-    if (storeState.initialElements.length > 0) {
-      isRemoteUpdateRef.current = true;
-      excalidrawAPI.updateScene({ elements: storeState.initialElements });
-      queueMicrotask(() => { isRemoteUpdateRef.current = false; });
-    }
-  }, [storeState.status, storeState.initialElements, excalidrawAPI]);
+    queueMicrotask(() => {
+      isRemoteUpdateRef.current = false;
+      isHydratedRef.current = true;
+    });
+  }, [storeState.status, storeState.initialElements, excalidrawAPI, activeNoteId]);
 
   // Handle local changes → push to Yjs
   const handleChange = useCallback(
     (elements: readonly ExcalidrawElement[]) => {
       if (storeState.status !== 'synced') return;
-      // Don't echo remote changes back to Yjs
+      if (!isHydratedRef.current) return;
       if (isRemoteUpdateRef.current) return;
       storeState.pushElements(elements);
     },
@@ -220,12 +248,17 @@ export default function Whiteboard() {
     <div 
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} 
     >
+      {isOffline && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium pointer-events-none">
+          Offline mode — sync server unavailable
+        </div>
+      )}
       <div style={{ width: "100%", height: "100%" }}>
         <Excalidraw
           key={activeNoteId}
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
           onChange={handleChange}
-          theme="light"
+          theme="dark"
           gridModeEnabled={true}
           viewModeEnabled={effectivelyReadOnly}
           UIOptions={{
@@ -234,11 +267,7 @@ export default function Whiteboard() {
             },
           }}
           initialData={{
-            appState: {
-              theme: "light",
-              gridSize: 32,
-              viewBackgroundColor: BOARD_BACKGROUND,
-            },
+            appState: DEFAULT_APP_STATE,
           }}
         />
       </div>

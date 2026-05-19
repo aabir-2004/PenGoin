@@ -1,6 +1,6 @@
 "use client";
 
-import { Tldraw, useEditor, useValue, TLTextShape } from "tldraw";
+import { Tldraw, useEditor, useValue, TLTextShape, createShapeId } from "tldraw";
 import "tldraw/tldraw.css";
 import { useEffect, useState } from "react";
 import { useNotesStore } from "@/store/useNotesStore";
@@ -34,7 +34,7 @@ function PenGoinLogic() {
           // Slash Command: Equation block
           if (nextText === "/math ") {
              editor.deleteShape(next.id);
-             const newId = `shape:math-${Date.now()}` as any;
+             const newId = createShapeId();
              editor.createShape({
                  id: newId,
                  type: "math",
@@ -50,7 +50,7 @@ function PenGoinLogic() {
           // Slash Command: Code block
           if (nextText === "/code ") {
              editor.deleteShape(next.id);
-             const newId = `shape:code-${Date.now()}` as any;
+             const newId = createShapeId();
              editor.createShape({
                  id: newId,
                  type: "code",
@@ -205,7 +205,10 @@ function PresenterLogic({ yDoc }: { yDoc: any }) {
     if (presenterId === editor.user.getId()) {
       unsubscribeCamera = editor.store.listen(() => {
         const camera = editor.getCamera();
-        yMeta.set('camera', { x: camera.x, y: camera.y, z: camera.z });
+        const prevCam = yMeta.get('camera') as any;
+        if (!prevCam || prevCam.x !== camera.x || prevCam.y !== camera.y || prevCam.z !== camera.z) {
+          yMeta.set('camera', { x: camera.x, y: camera.y, z: camera.z });
+        }
       }, { scope: 'session' });
     }
 

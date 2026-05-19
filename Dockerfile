@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including tsx for the server)
-RUN npm install
+# Install dependencies (including build tools for native modules)
+RUN apk add --no-cache python3 make g++ && npm install
 
 # Copy the server script
 COPY server.ts ./
@@ -15,5 +15,5 @@ COPY server.ts ./
 ENV PORT=7860
 EXPOSE 7860
 
-# Run the Hocuspocus WebSocket sync server
+# Run the tldraw sync server
 CMD ["npm", "run", "sync"]

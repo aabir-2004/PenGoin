@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Tldraw,
   Editor,
@@ -15,14 +15,25 @@ import { useSync } from "@tldraw/sync";
 import { useNotesStore } from "@/store/useNotesStore";
 import "tldraw/tldraw.css";
 
-// Resolve WebSocket base URL once (outside component to avoid re-renders)
-const WS_BASE =
-  process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
-  (typeof window !== "undefined"
-    ? `ws://${window.location.hostname}:1234`
-    : "ws://localhost:1234");
+// Resolve WebSocket URL:
+// - NEXT_PUBLIC_WEBSOCKET_URL env var takes priority (set for production)
+// - On localhost: ws://
+// - On any other host: wss://
+function getWsBase(): string {
+  if (process.env.NEXT_PUBLIC_WEBSOCKET_URL) {
+    return process.env.NEXT_PUBLIC_WEBSOCKET_URL;
+  }
+  if (typeof window === "undefined") return "ws://localhost:1234";
+  const isLocal =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  const protocol = isLocal ? "ws" : "wss";
+  const port = isLocal ? ":1234" : "";
+  return `${protocol}://${window.location.hostname}${port}`;
+}
 
-// Bottom toolbar — same tools as default, position handled by CSS
+const WS_BASE = getWsBase();
+
 function BottomToolbar() {
   return (
     <DefaultToolbar>
@@ -31,12 +42,9 @@ function BottomToolbar() {
   );
 }
 
-// Memoized outside component so the reference is stable across renders
-const COMPONENTS: TLComponents = {
-  Toolbar: BottomToolbar,
-};
+// Stable references outside component — prevents unnecessary re-renders
+const COMPONENTS: TLComponents = { Toolbar: BottomToolbar };
 
-// Simple passthrough asset store — no upload server needed for now
 const ASSET_STORE: TLAssetStore = {
   upload: async () => ({ src: "" }),
   resolve: (asset) => {
@@ -50,23 +58,14 @@ interface TldrawCanvasProps {
 }
 
 export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
-  const { isReadOnly } = useNotesStore();
-  const [isOffline, setIsOffline] = useState(false);
-
   const store = useSync({
     uri: `${WS_BASE}/connect/${roomId}`,
     assets: ASSET_STORE,
   });
 
-  useEffect(() => {
-    setIsOffline(store.status === "error");
-  }, [store.status]);
-
   const handleMount = (editor: Editor) => {
-    // Disable grid snapping — keep alignment guides only
     editor.updateInstanceState({ isGridMode: false });
 
-    // Expose export to TopBar
     window.exportWhiteboard = async (format: "png" | "svg" = "png") => {
       const shapeIds = [...editor.getCurrentPageShapeIds()] as TLShapeId[];
       if (shapeIds.length === 0) {
@@ -104,15 +103,33 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
     );
   }
 
+  if (store.status === "error") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-[#09090a]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="text-red-400 text-sm font-medium">
+            Could not connect to sync server
+          </div>
+          <div className="text-[#9A9A9F] text-xs max-w-xs text-center">
+            Make sure the sync server is running at{" "}
+            <code className="text-indigo-400">{WS_BASE}</code>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="absolute inset-0 w-full h-full">
-      {isOffline && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium pointer-events-none">
-          Offline mode — sync server unavailable
-        </div>
-      )}
       <Tldraw
-        store={store.status === "synced-remote" ? store.store : undefined}
+        store={store.store}
         onMount={handleMount}
         inferDarkMode
         components={COMPONENTS}

@@ -34,16 +34,11 @@ body {
    Excalidraw UI Overrides — PenGoin Theme
    ======================================== */
 
-/* Force the drawing surface itself to use the blackboard background */
-.excalidraw {
-  background: #09090a !important;
-}
-
-/* Keep the main toolbar clearly visible below the app header */
+/* Move the main toolbar to the bottom of the canvas */
 .excalidraw .App-toolbar-container {
   position: fixed !important;
-  top: 108px !important;
-  bottom: auto !important;
+  bottom: 24px !important;
+  top: auto !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 35 !important;
@@ -146,28 +141,17 @@ body {
   border-radius: 2px;
 }
 
-/* Keep Excalidraw's native grid visible so canvas panning is perceptible */
-.excalidraw svg.Grid {
+/* Keep Excalidraw's native grid visible */
+.excalidraw .Grid {
   display: block !important;
 }
 
-/* Blackboard background */
-.excalidraw .excalidraw__canvas-wrapper,
-.excalidraw .interactive.excalidraw__canvas,
-.excalidraw canvas.excalidraw__canvas {
-  background-color: #09090a !important;
-  background-image: radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 38%) !important;
-  background-size: 100% 100% !important;
-  background-position: center center !important;
-}
-
-/* Sparse, subtle solid grid on the blackboard */
+/* Ensure the grid dots/lines are visible on the dark background */
 .excalidraw .Grid line,
-.excalidraw .Grid path {
+.excalidraw .Grid path,
+.excalidraw .Grid circle {
   display: block !important;
-  stroke: rgba(255, 255, 255, 0.08) !important;
-  stroke-width: 1 !important;
-  stroke-dasharray: none !important;
+  opacity: 1 !important;
 }
 
 .excalidraw .layer-ui__wrapper__footer-left,

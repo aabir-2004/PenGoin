@@ -116,10 +116,13 @@ export default function Whiteboard() {
         : {}),
     });
 
-    queueMicrotask(() => {
+    // Use setTimeout instead of queueMicrotask so Excalidraw's async
+    // onChange callbacks (which fire after a rAF) have already settled
+    // before we open the gate for local changes.
+    setTimeout(() => {
       isRemoteUpdateRef.current = false;
       isHydratedRef.current = true;
-    });
+    }, 100);
   }, [storeState.status, storeState.initialElements, excalidrawAPI, activeNoteId]);
 
   // Handle local changes → push to Yjs
@@ -246,7 +249,7 @@ export default function Whiteboard() {
 
   return (
     <div 
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} 
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "hidden" }} 
     >
       {isOffline && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium pointer-events-none">

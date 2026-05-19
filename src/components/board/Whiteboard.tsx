@@ -8,6 +8,25 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
 type CameraState = Record<string, unknown>;
+const USER_ID_STORAGE_KEY = "pengoin-user-id";
+const BOARD_BACKGROUND = "#09090A";
+
+const getOrCreateUserId = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const existingId = window.localStorage.getItem(USER_ID_STORAGE_KEY);
+  if (existingId) {
+    window.__pengoin_user_id = existingId;
+    return existingId;
+  }
+
+  const newId = crypto.randomUUID();
+  window.localStorage.setItem(USER_ID_STORAGE_KEY, newId);
+  window.__pengoin_user_id = newId;
+  return newId;
+};
 
 declare global {
   interface Window {
@@ -64,6 +83,12 @@ export default function Whiteboard() {
   // Push initial elements into Excalidraw once API is ready
   useEffect(() => {
     if (storeState.status !== 'synced' || !excalidrawAPI) return;
+    excalidrawAPI.updateScene({
+      appState: {
+        viewBackgroundColor: BOARD_BACKGROUND,
+      },
+    });
+
     if (storeState.initialElements.length > 0) {
       isRemoteUpdateRef.current = true;
       excalidrawAPI.updateScene({ elements: storeState.initialElements });
@@ -103,7 +128,7 @@ export default function Whiteboard() {
 
   // Update presenter state in zustand
   useEffect(() => {
-    const myId = typeof window !== 'undefined' ? window.__pengoin_user_id ?? null : null;
+    const myId = getOrCreateUserId();
     const amIPresenting = presenterId === myId;
     const isFollowing = !!presenterId && !amIPresenting;
     setPresenterState(amIPresenting, isFollowing);
@@ -113,7 +138,7 @@ export default function Whiteboard() {
   useEffect(() => {
     if (storeState.status !== 'synced' || !storeState.yDoc || !excalidrawAPI) return;
     const yMeta = storeState.yDoc.getMap<CameraState | string | null>('meta');
-    const myId = typeof window !== 'undefined' ? window.__pengoin_user_id ?? null : null;
+    const myId = getOrCreateUserId();
 
     if (presenterId && presenterId !== myId) {
       // Follow presenter's scroll position
@@ -132,11 +157,8 @@ export default function Whiteboard() {
   useEffect(() => {
     if (storeState.status !== 'synced' || !storeState.yDoc) return;
     
-    // Generate a stable user ID for this session
-    if (typeof window !== 'undefined' && !window.__pengoin_user_id) {
-      window.__pengoin_user_id = crypto.randomUUID();
-    }
-    const myId = window.__pengoin_user_id;
+    const myId = getOrCreateUserId();
+    if (!myId) return;
 
     window.togglePresenter = () => {
       const yMeta = storeState.yDoc!.getMap('meta');
@@ -237,7 +259,7 @@ export default function Whiteboard() {
           initialData={{
             appState: {
               theme: "dark",
-              viewBackgroundColor: "#09090A",
+              viewBackgroundColor: BOARD_BACKGROUND,
             },
           }}
         />

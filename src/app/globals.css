@@ -19,6 +19,11 @@
   }
 }
 
+html,
+body {
+  background: #0f0f11;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -28,6 +33,11 @@ body {
 /* ========================================
    Excalidraw UI Overrides — PenGoin Theme
    ======================================== */
+
+/* Force the drawing surface itself to use the blackboard background */
+.excalidraw {
+  background: #09090a !important;
+}
 
 /* Move the main toolbar to bottom center */
 .excalidraw .App-toolbar-container {
@@ -111,6 +121,7 @@ body {
 }
 
 /* Blackboard-style sparse dot grid */
+.excalidraw .excalidraw__canvas-wrapper,
 .excalidraw .interactive.excalidraw__canvas,
 .excalidraw canvas.excalidraw__canvas {
   background-color: #09090a !important;

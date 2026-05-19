@@ -13,8 +13,6 @@ import {
   track,
   DefaultSizeStyle,
   TLDefaultSizeStyle,
-  DefaultFontStyle,
-  TLDefaultFontStyle,
   SelectToolbarItem,
   HandToolbarItem,
   DrawToolbarItem,
@@ -28,6 +26,18 @@ import {
   EllipseToolbarItem,
   DiamondToolbarItem,
   TriangleToolbarItem,
+  HexagonToolbarItem,
+  OvalToolbarItem,
+  RhombusToolbarItem,
+  StarToolbarItem,
+  CloudToolbarItem,
+  HeartToolbarItem,
+  XBoxToolbarItem,
+  CheckBoxToolbarItem,
+  ArrowLeftToolbarItem,
+  ArrowUpToolbarItem,
+  ArrowDownToolbarItem,
+  ArrowRightToolbarItem,
   LineToolbarItem,
   HighlightToolbarItem,
   FrameToolbarItem,
@@ -61,13 +71,6 @@ const ASSET_STORE: TLAssetStore = {
   },
 };
 
-const FONT_LABELS: Record<TLDefaultFontStyle, string> = {
-  draw: "Arial Black",
-  sans: "Calibri",
-  serif: "Times New Roman",
-  mono: "Georgia",
-};
-
 const TEXT_SIZE_OPTIONS = [
   8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54,
   60, 66, 72,
@@ -99,56 +102,16 @@ function getMappedTextSize(fontSize: number): {
 function getShapeProps(
   shape: unknown
 ): null | {
-  font?: TLDefaultFontStyle;
   scale?: number;
   size?: TLDefaultSizeStyle;
 } {
   if (!shape || typeof shape !== "object" || !("props" in shape)) return null;
   const props = (shape as { props: Record<string, unknown> }).props;
   return props as {
-    font?: TLDefaultFontStyle;
     scale?: number;
     size?: TLDefaultSizeStyle;
   };
 }
-
-const FontPicker = track(function FontPicker() {
-  const editor = useEditor();
-  const selectedShapes = editor.getSelectedShapes();
-  const selectedFont = selectedShapes
-    .map(getShapeProps)
-    .find((props) => props?.font)?.font;
-  const currentFont =
-    selectedFont ??
-    (editor.getStyleForNextShape(DefaultFontStyle) as TLDefaultFontStyle) ??
-    "sans";
-
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const font = e.target.value as TLDefaultFontStyle;
-    editor.setStyleForNextShapes(DefaultFontStyle, font);
-    editor.setStyleForSelectedShapes(DefaultFontStyle, font);
-  };
-
-  return (
-    <label className="flex items-center gap-2 px-2 border-l border-[#2e2e33] ml-1">
-      <span className="text-[10px] text-[#9A9A9F] uppercase tracking-wide">
-        Font
-      </span>
-      <select
-        value={currentFont}
-        onChange={handleChange}
-        className="h-7 min-w-[132px] rounded border border-[#2E2E33] bg-[#202024] px-2 text-[11px] text-white outline-none"
-        title="Text font"
-      >
-        {Object.entries(FONT_LABELS).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-});
 
 interface FontSizeControlProps {
   value: number;
@@ -267,12 +230,23 @@ function CustomToolbar({
           <AssetToolbarItem />
           <RectangleToolbarItem />
           <EllipseToolbarItem />
-          <DiamondToolbarItem />
           <TriangleToolbarItem />
+          <DiamondToolbarItem />
+          <HexagonToolbarItem />
+          <OvalToolbarItem />
+          <RhombusToolbarItem />
+          <StarToolbarItem />
+          <CloudToolbarItem />
+          <HeartToolbarItem />
+          <XBoxToolbarItem />
+          <CheckBoxToolbarItem />
+          <ArrowLeftToolbarItem />
+          <ArrowUpToolbarItem />
+          <ArrowDownToolbarItem />
+          <ArrowRightToolbarItem />
           <LineToolbarItem />
           <HighlightToolbarItem />
           <FrameToolbarItem />
-          <FontPicker />
           <FontSizeControl value={textSize} onChange={onTextSizeChange} />
         </>
       )}

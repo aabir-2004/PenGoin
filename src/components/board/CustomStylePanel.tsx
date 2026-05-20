@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   ArrowShapeArrowheadEndStyle,
   ArrowShapeArrowheadStartStyle,
@@ -18,15 +18,23 @@ import {
   LineShapeSplineStyle,
   OpacitySlider,
   ReadonlySharedStyleMap,
+  SharedStyle,
   StyleProp,
   TLArrowShapeArrowheadStyle,
   TLDefaultColorTheme,
+  TldrawUiButtonLabel,
+  TldrawUiMenuContextProvider,
+  TLUiTranslationKey,
+  TldrawUiPopover,
+  TldrawUiPopoverContent,
+  TldrawUiPopoverTrigger,
   TldrawUiButtonIcon,
   TldrawUiButtonPicker,
   TldrawUiToolbar,
   TldrawUiToolbarButton,
   getDefaultColorTheme,
   kickoutOccludedShapes,
+  tlmenus,
   useEditor,
   useIsDarkMode,
   useRelevantStyles,
@@ -34,20 +42,349 @@ import {
   useUiEvents,
   useValue,
 } from "tldraw";
-// These helpers are not re-exported from the package root, so we import the
-// built JS modules directly to keep the side-panel UI aligned with tldraw.
-// @ts-expect-error Internal tldraw helper module.
-import { STYLES } from "tldraw/dist-cjs/lib/styles.js";
-// @ts-expect-error Internal tldraw helper module.
-import { DoubleDropdownPicker } from "tldraw/dist-cjs/lib/ui/components/StylePanel/DoubleDropdownPicker.js";
-// @ts-expect-error Internal tldraw helper module.
-import { DropdownPicker } from "tldraw/dist-cjs/lib/ui/components/StylePanel/DropdownPicker.js";
 import { useNotesStore } from "@/store/useNotesStore";
 import {
   getMappedTextSize,
   getShapeTextSize,
   TEXT_SIZE_OPTIONS,
 } from "@/components/board/textStyles";
+
+type StyleValuesForUi<T extends string> = readonly {
+  readonly value: T;
+  readonly icon: string;
+}[];
+
+const STYLES = {
+  color: [
+    { value: "black", icon: "color" },
+    { value: "grey", icon: "color" },
+    { value: "light-violet", icon: "color" },
+    { value: "violet", icon: "color" },
+    { value: "blue", icon: "color" },
+    { value: "light-blue", icon: "color" },
+    { value: "yellow", icon: "color" },
+    { value: "orange", icon: "color" },
+    { value: "green", icon: "color" },
+    { value: "light-green", icon: "color" },
+    { value: "light-red", icon: "color" },
+    { value: "red", icon: "color" },
+  ],
+  fill: [
+    { value: "none", icon: "fill-none" },
+    { value: "semi", icon: "fill-semi" },
+    { value: "solid", icon: "fill-solid" },
+    { value: "pattern", icon: "fill-pattern" },
+  ],
+  dash: [
+    { value: "draw", icon: "dash-draw" },
+    { value: "dashed", icon: "dash-dashed" },
+    { value: "dotted", icon: "dash-dotted" },
+    { value: "solid", icon: "dash-solid" },
+  ],
+  size: [
+    { value: "s", icon: "size-small" },
+    { value: "m", icon: "size-medium" },
+    { value: "l", icon: "size-large" },
+    { value: "xl", icon: "size-extra-large" },
+  ],
+  font: [
+    { value: "draw", icon: "font-draw" },
+    { value: "sans", icon: "font-sans" },
+    { value: "serif", icon: "font-serif" },
+    { value: "mono", icon: "font-mono" },
+  ],
+  textAlign: [
+    { value: "start", icon: "text-align-left" },
+    { value: "middle", icon: "text-align-center" },
+    { value: "end", icon: "text-align-right" },
+  ],
+  horizontalAlign: [
+    { value: "start", icon: "horizontal-align-start" },
+    { value: "middle", icon: "horizontal-align-middle" },
+    { value: "end", icon: "horizontal-align-end" },
+  ],
+  verticalAlign: [
+    { value: "start", icon: "vertical-align-start" },
+    { value: "middle", icon: "vertical-align-middle" },
+    { value: "end", icon: "vertical-align-end" },
+  ],
+  geo: [
+    { value: "rectangle", icon: "geo-rectangle" },
+    { value: "ellipse", icon: "geo-ellipse" },
+    { value: "triangle", icon: "geo-triangle" },
+    { value: "diamond", icon: "geo-diamond" },
+    { value: "star", icon: "geo-star" },
+    { value: "pentagon", icon: "geo-pentagon" },
+    { value: "hexagon", icon: "geo-hexagon" },
+    { value: "octagon", icon: "geo-octagon" },
+    { value: "rhombus", icon: "geo-rhombus" },
+    { value: "rhombus-2", icon: "geo-rhombus-2" },
+    { value: "oval", icon: "geo-oval" },
+    { value: "trapezoid", icon: "geo-trapezoid" },
+    { value: "arrow-left", icon: "geo-arrow-left" },
+    { value: "arrow-up", icon: "geo-arrow-up" },
+    { value: "arrow-down", icon: "geo-arrow-down" },
+    { value: "arrow-right", icon: "geo-arrow-right" },
+    { value: "cloud", icon: "geo-cloud" },
+    { value: "x-box", icon: "geo-x-box" },
+    { value: "check-box", icon: "geo-check-box" },
+    { value: "heart", icon: "geo-heart" },
+  ],
+  arrowKind: [
+    { value: "arc", icon: "arrow-arc" },
+    { value: "elbow", icon: "arrow-elbow" },
+  ],
+  arrowheadStart: [
+    { value: "none", icon: "arrowhead-none" },
+    { value: "arrow", icon: "arrowhead-arrow" },
+    { value: "triangle", icon: "arrowhead-triangle" },
+    { value: "square", icon: "arrowhead-square" },
+    { value: "dot", icon: "arrowhead-dot" },
+    { value: "diamond", icon: "arrowhead-diamond" },
+    { value: "inverted", icon: "arrowhead-triangle-inverted" },
+    { value: "bar", icon: "arrowhead-bar" },
+  ],
+  arrowheadEnd: [
+    { value: "none", icon: "arrowhead-none" },
+    { value: "arrow", icon: "arrowhead-arrow" },
+    { value: "triangle", icon: "arrowhead-triangle" },
+    { value: "square", icon: "arrowhead-square" },
+    { value: "dot", icon: "arrowhead-dot" },
+    { value: "diamond", icon: "arrowhead-diamond" },
+    { value: "inverted", icon: "arrowhead-triangle-inverted" },
+    { value: "bar", icon: "arrowhead-bar" },
+  ],
+  spline: [
+    { value: "line", icon: "spline-line" },
+    { value: "cubic", icon: "spline-cubic" },
+  ],
+} as const satisfies Record<string, StyleValuesForUi<string>>;
+
+interface DropdownPickerProps<T extends string> {
+  id: string;
+  label?: TLUiTranslationKey | string;
+  uiType: string;
+  stylePanelType: string;
+  style: StyleProp<T>;
+  value: SharedStyle<T>;
+  items: StyleValuesForUi<T>;
+  type: "icon" | "tool" | "menu";
+  onValueChange(style: StyleProp<T>, value: T): void;
+}
+
+function DropdownPicker<T extends string>({
+  id,
+  label,
+  uiType,
+  stylePanelType,
+  style,
+  items,
+  type,
+  value,
+  onValueChange,
+}: DropdownPickerProps<T>) {
+  const msg = useTranslation();
+  const editor = useEditor();
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const icon = React.useMemo(
+    () => items.find((item) => value.type === "shared" && item.value === value.value)?.icon,
+    [items, value]
+  );
+
+  const stylePanelName = msg(`style-panel.${stylePanelType}` as TLUiTranslationKey);
+  const titleStr =
+    value.type === "mixed"
+      ? msg("style-panel.mixed")
+      : `${stylePanelName} — ${msg(`${uiType}-style.${value.value}` as TLUiTranslationKey)}`;
+  const labelStr = label ? msg(label as TLUiTranslationKey) : "";
+  const popoverId = `style panel ${id}`;
+
+  return (
+    <TldrawUiPopover id={popoverId} open={isOpen} onOpenChange={setIsOpen}>
+      <TldrawUiPopoverTrigger>
+        <TldrawUiToolbarButton
+          type={type}
+          data-testid={`style.${uiType}`}
+          data-direction="left"
+          title={titleStr}
+        >
+          {labelStr && <TldrawUiButtonLabel>{labelStr}</TldrawUiButtonLabel>}
+          <TldrawUiButtonIcon icon={icon ?? "mixed"} />
+        </TldrawUiToolbarButton>
+      </TldrawUiPopoverTrigger>
+      <TldrawUiPopoverContent side="left" align="center">
+        <TldrawUiToolbar
+          label={labelStr}
+          className={`tlui-buttons__grid tlui-buttons__${stylePanelType}`}
+        >
+          <TldrawUiMenuContextProvider type="icons" sourceId="style-panel">
+            {items.map((item) => (
+              <TldrawUiToolbarButton
+                key={item.value}
+                type="icon"
+                data-testid={`style.${uiType}.${item.value}`}
+                title={`${stylePanelName} — ${msg(
+                  `${uiType}-style.${item.value}` as TLUiTranslationKey
+                )}`}
+                isActive={icon === item.icon}
+                onClick={() => {
+                  editor.markHistoryStoppingPoint("select style dropdown item");
+                  onValueChange(style, item.value);
+                  tlmenus.deleteOpenMenu(popoverId, editor.contextId);
+                  setIsOpen(false);
+                }}
+              >
+                <TldrawUiButtonIcon icon={item.icon} />
+              </TldrawUiToolbarButton>
+            ))}
+          </TldrawUiMenuContextProvider>
+        </TldrawUiToolbar>
+      </TldrawUiPopoverContent>
+    </TldrawUiPopover>
+  );
+}
+
+interface DoubleDropdownPickerProps<T extends string> {
+  uiTypeA: string;
+  uiTypeB: string;
+  label: TLUiTranslationKey | string;
+  labelA: TLUiTranslationKey | string;
+  labelB: TLUiTranslationKey | string;
+  itemsA: StyleValuesForUi<T>;
+  itemsB: StyleValuesForUi<T>;
+  styleA: StyleProp<T>;
+  styleB: StyleProp<T>;
+  valueA: SharedStyle<T>;
+  valueB: SharedStyle<T>;
+  onValueChange(style: StyleProp<T>, value: T): void;
+}
+
+function DoubleDropdownPicker<T extends string>({
+  label,
+  uiTypeA,
+  uiTypeB,
+  labelA,
+  labelB,
+  itemsA,
+  itemsB,
+  styleA,
+  styleB,
+  valueA,
+  valueB,
+  onValueChange,
+}: DoubleDropdownPickerProps<T>) {
+  const editor = useEditor();
+  const msg = useTranslation();
+  const [isOpenA, setIsOpenA] = React.useState(false);
+  const [isOpenB, setIsOpenB] = React.useState(false);
+
+  const iconA = React.useMemo(
+    () =>
+      itemsA.find((item) => valueA.type === "shared" && valueA.value === item.value)?.icon ??
+      "mixed",
+    [itemsA, valueA]
+  );
+  const iconB = React.useMemo(
+    () =>
+      itemsB.find((item) => valueB.type === "shared" && valueB.value === item.value)?.icon ??
+      "mixed",
+    [itemsB, valueB]
+  );
+
+  const idA = `style panel ${uiTypeA} A`;
+  const idB = `style panel ${uiTypeB} B`;
+
+  return (
+    <div className="tlui-style-panel__double-select-picker">
+      <div title={msg(label as TLUiTranslationKey)} className="tlui-style-panel__double-select-picker-label">
+        {msg(label as TLUiTranslationKey)}
+      </div>
+      <TldrawUiToolbar
+        label={msg(label as TLUiTranslationKey)}
+        className="tlui-buttons__horizontal"
+      >
+        <TldrawUiPopover id={idA} open={isOpenA} onOpenChange={setIsOpenA}>
+          <TldrawUiPopoverTrigger>
+            <TldrawUiToolbarButton
+              type="icon"
+              data-testid={`style.${uiTypeA}`}
+              title={`${msg(labelA as TLUiTranslationKey)} — ${
+                valueA.type === "mixed"
+                  ? msg("style-panel.mixed")
+                  : msg(`${uiTypeA}-style.${valueA.value}` as TLUiTranslationKey)
+              }`}
+            >
+              <TldrawUiButtonIcon icon={iconA} small invertIcon />
+            </TldrawUiToolbarButton>
+          </TldrawUiPopoverTrigger>
+          <TldrawUiPopoverContent side="left" align="center" sideOffset={80} alignOffset={0}>
+            <TldrawUiToolbar label={msg(labelA as TLUiTranslationKey)} className="tlui-buttons__grid">
+              <TldrawUiMenuContextProvider type="icons" sourceId="style-panel">
+                {itemsA.map((item) => (
+                  <TldrawUiToolbarButton
+                    data-testid={`style.${uiTypeA}.${item.value}`}
+                    type="icon"
+                    key={item.value}
+                    onClick={() => {
+                      onValueChange(styleA, item.value);
+                      tlmenus.deleteOpenMenu(idA, editor.contextId);
+                      setIsOpenA(false);
+                    }}
+                    title={`${msg(labelA as TLUiTranslationKey)} — ${msg(
+                      `${uiTypeA}-style.${item.value}` as TLUiTranslationKey
+                    )}`}
+                  >
+                    <TldrawUiButtonIcon icon={item.icon} invertIcon />
+                  </TldrawUiToolbarButton>
+                ))}
+              </TldrawUiMenuContextProvider>
+            </TldrawUiToolbar>
+          </TldrawUiPopoverContent>
+        </TldrawUiPopover>
+
+        <TldrawUiPopover id={idB} open={isOpenB} onOpenChange={setIsOpenB}>
+          <TldrawUiPopoverTrigger>
+            <TldrawUiToolbarButton
+              type="icon"
+              data-testid={`style.${uiTypeB}`}
+              title={`${msg(labelB as TLUiTranslationKey)} — ${
+                valueB.type === "mixed"
+                  ? msg("style-panel.mixed")
+                  : msg(`${uiTypeB}-style.${valueB.value}` as TLUiTranslationKey)
+              }`}
+            >
+              <TldrawUiButtonIcon icon={iconB} small />
+            </TldrawUiToolbarButton>
+          </TldrawUiPopoverTrigger>
+          <TldrawUiPopoverContent side="left" align="center" sideOffset={116} alignOffset={0}>
+            <TldrawUiToolbar label={msg(labelB as TLUiTranslationKey)} className="tlui-buttons__grid">
+              <TldrawUiMenuContextProvider type="icons" sourceId="style-panel">
+                {itemsB.map((item) => (
+                  <TldrawUiToolbarButton
+                    key={item.value}
+                    type="icon"
+                    title={`${msg(labelB as TLUiTranslationKey)} — ${msg(
+                      `${uiTypeB}-style.${item.value}` as TLUiTranslationKey
+                    )}`}
+                    data-testid={`style.${uiTypeB}.${item.value}`}
+                    onClick={() => {
+                      onValueChange(styleB, item.value);
+                      tlmenus.deleteOpenMenu(idB, editor.contextId);
+                      setIsOpenB(false);
+                    }}
+                  >
+                    <TldrawUiButtonIcon icon={item.icon} />
+                  </TldrawUiToolbarButton>
+                ))}
+              </TldrawUiMenuContextProvider>
+            </TldrawUiToolbar>
+          </TldrawUiPopoverContent>
+        </TldrawUiPopover>
+      </TldrawUiToolbar>
+    </div>
+  );
+}
 
 function useStyleChangeCallback() {
   const editor = useEditor();

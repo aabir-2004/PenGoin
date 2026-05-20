@@ -589,6 +589,11 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
     if (!editorRef.current) return;
     const shouldLockCanvas =
       isReadOnly || (isPresentationView && presentationState.isScreenLocked);
+    
+    // Natively set read-only state so panning and pinch-zooming are fully enabled
+    // on touch devices, while preventing any modifications or additions.
+    editorRef.current.updateInstanceState({ isReadonly: shouldLockCanvas });
+    
     editorRef.current.setCurrentTool(shouldLockCanvas ? "hand" : "select");
     if (shouldLockCanvas) {
       editorRef.current.blur({ blurContainer: true });
@@ -631,13 +636,9 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
   }
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 w-full h-full" style={{ touchAction: "none" }}>
       <div
-        className={`absolute inset-0 z-[250] ${
-          isReadOnly || (isPresentationView && presentationState.isScreenLocked)
-            ? "pointer-events-auto"
-            : "pointer-events-none"
-        }`}
+        className="absolute inset-0 z-[250] pointer-events-none"
         style={{
           left: isPresentationView ? 0 : "var(--sidebar-width)",
           bottom: isPresentationView ? 0 : 72,

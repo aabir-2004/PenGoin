@@ -17,7 +17,7 @@ const TldrawCanvas = dynamic(() => import("./TldrawCanvas"), {
 
 export default function Whiteboard() {
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden">
+    <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ touchAction: "none" }}>
       <TldrawCanvas roomId={ROOM_ID} />
     </div>
   );

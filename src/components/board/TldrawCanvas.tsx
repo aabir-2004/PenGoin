@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Tldraw,
   Editor,
@@ -8,11 +8,12 @@ import {
   TLComponents,
   TLAssetStore,
   exportToBlob,
+  TLPageId,
   TLShapeId,
   useEditor,
+  useValue,
   track,
   DefaultSizeStyle,
-  TLDefaultSizeStyle,
   SelectToolbarItem,
   HandToolbarItem,
   DrawToolbarItem,
@@ -45,6 +46,12 @@ import {
 import { useSync } from "@tldraw/sync";
 import { useNotesStore } from "@/store/useNotesStore";
 import Sidebar from "@/components/layout/Sidebar";
+import CustomStylePanel from "@/components/board/CustomStylePanel";
+import {
+  getPresentationStateFromMeta,
+  withPresentationState,
+} from "@/components/board/presentation";
+import { getMappedTextSize } from "@/components/board/textStyles";
 import "tldraw/tldraw.css";
 
 // ─── WebSocket URL ────────────────────────────────────────────────────────────
@@ -70,91 +77,6 @@ const ASSET_STORE: TLAssetStore = {
     return "";
   },
 };
-
-const TEXT_SIZE_OPTIONS = [
-  8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54,
-  60, 66, 72,
-];
-
-const BASE_TEXT_SIZES: Record<TLDefaultSizeStyle, number> = {
-  s: 18,
-  m: 24,
-  l: 36,
-  xl: 44,
-};
-
-function getMappedTextSize(fontSize: number): {
-  size: TLDefaultSizeStyle;
-  scale: number;
-} {
-  if (fontSize <= BASE_TEXT_SIZES.s) {
-    return { size: "s", scale: fontSize / BASE_TEXT_SIZES.s };
-  }
-  if (fontSize <= BASE_TEXT_SIZES.m) {
-    return { size: "m", scale: fontSize / BASE_TEXT_SIZES.m };
-  }
-  if (fontSize <= BASE_TEXT_SIZES.l) {
-    return { size: "l", scale: fontSize / BASE_TEXT_SIZES.l };
-  }
-  return { size: "xl", scale: fontSize / BASE_TEXT_SIZES.xl };
-}
-
-function getShapeProps(
-  shape: unknown
-): null | {
-  scale?: number;
-  size?: TLDefaultSizeStyle;
-} {
-  if (!shape || typeof shape !== "object" || !("props" in shape)) return null;
-  const props = (shape as { props: Record<string, unknown> }).props;
-  return props as {
-    scale?: number;
-    size?: TLDefaultSizeStyle;
-  };
-}
-
-interface FontSizeControlProps {
-  value: number;
-  onChange: (value: number) => void;
-}
-
-const FontSizeControl = track(function FontSizeControl({
-  value,
-  onChange,
-}: FontSizeControlProps) {
-  const editor = useEditor();
-  const selectedTextShape = editor
-    .getSelectedShapes()
-    .find((shape) => (shape as { type?: string }).type === "text");
-
-  const resolvedValue = (() => {
-    const props = getShapeProps(selectedTextShape);
-    if (!props?.size) return value;
-    const base = BASE_TEXT_SIZES[props.size];
-    const scale = props.scale ?? 1;
-    return Math.max(8, Math.round(base * scale));
-  })();
-
-  return (
-    <label className="flex items-center gap-2 px-2 border-l border-[#2e2e33] ml-1">
-      <span className="text-[10px] text-[#9A9A9F] uppercase tracking-wide">
-        Size
-      </span>
-      <select
-        value={resolvedValue}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="h-7 w-[74px] rounded border border-[#2E2E33] bg-[#202024] px-2 text-[11px] text-white outline-none"
-        title="Text size"
-      >
-        {TEXT_SIZE_OPTIONS.map((size) => (
-          <option key={size} value={size}>
-            {size}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-});
 
 // ─── Page navigation component ────────────────────────────────────────────────
 const PageNav = track(function PageNav() {
@@ -206,15 +128,9 @@ const PageNav = track(function PageNav() {
 // ─── Custom toolbar ───────────────────────────────────────────────────────────
 interface CustomToolbarProps {
   isReadOnly: boolean;
-  textSize: number;
-  onTextSizeChange: (value: number) => void;
 }
 
-function CustomToolbar({
-  isReadOnly,
-  textSize,
-  onTextSizeChange,
-}: CustomToolbarProps) {
+function CustomToolbar({ isReadOnly }: CustomToolbarProps) {
   return (
     <DefaultToolbar>
       {!isReadOnly && (
@@ -247,13 +163,162 @@ function CustomToolbar({
           <LineToolbarItem />
           <HighlightToolbarItem />
           <FrameToolbarItem />
-          <FontSizeControl value={textSize} onChange={onTextSizeChange} />
         </>
       )}
       <PageNav />
     </DefaultToolbar>
   );
 }
+
+const PresentationViewOverlay = track(function PresentationViewOverlay() {
+  const isPresentationView = useNotesStore((s) => s.isPresentationView);
+  const setPresentationView = useNotesStore((s) => s.setPresentationView);
+  const presentationState = useNotesStore((s) => s.presentationState);
+
+  if (!isPresentationView) return null;
+
+  return (
+    <div className="absolute top-4 right-4 z-[500] flex items-center gap-2 pointer-events-auto">
+      <div className="rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
+        {presentationState.active
+          ? presentationState.isScreenLocked
+            ? "Presentation Locked"
+            : "Presentation Unlocked"
+          : "Presentation View"}
+      </div>
+      <button
+        type="button"
+        onClick={() => setPresentationView(false)}
+        className="rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-medium text-white backdrop-blur hover:bg-black/75 transition-colors"
+      >
+        Exit View
+      </button>
+    </div>
+  );
+});
+
+const PresentationSync = track(function PresentationSync() {
+  const editor = useEditor();
+  const deviceId = useNotesStore((s) => s.deviceId);
+  const isPresentationView = useNotesStore((s) => s.isPresentationView);
+  const setPresentationState = useNotesStore((s) => s.setPresentationState);
+  const currentPageId = useValue(
+    "presentation-current-page-id",
+    () => editor.getCurrentPageId(),
+    [editor]
+  );
+  const documentMeta = useValue(
+    "presentation-document-meta",
+    () => editor.getDocumentSettings().meta,
+    [editor]
+  );
+  const presentationState = getPresentationStateFromMeta(documentMeta);
+  const isPresenter =
+    presentationState.active && presentationState.presenterId === deviceId;
+
+  useEffect(() => {
+    setPresentationState(presentationState);
+  }, [presentationState, setPresentationState]);
+
+  useEffect(() => {
+    if (!isPresenter) return;
+    if (presentationState.currentPageId === currentPageId) return;
+
+    editor.updateDocumentSettings({
+      meta: withPresentationState(documentMeta as Record<string, unknown>, {
+        ...presentationState,
+        currentPageId,
+      }),
+    });
+  }, [currentPageId, documentMeta, editor, isPresenter, presentationState]);
+
+  useEffect(() => {
+    if (!isPresentationView) return;
+    if (!presentationState.active) return;
+    if (!presentationState.currentPageId) return;
+    if (presentationState.currentPageId === currentPageId) return;
+
+    editor.setCurrentPage(presentationState.currentPageId as TLPageId);
+  }, [currentPageId, editor, isPresentationView, presentationState]);
+
+  useEffect(() => {
+    const controls = {
+      startPresenting: () => {
+        const nextState = {
+          ...presentationState,
+          active: true,
+          presenterId: deviceId,
+          currentPageId,
+        };
+        editor.updateDocumentSettings({
+          meta: withPresentationState(
+            editor.getDocumentSettings().meta as Record<string, unknown>,
+            nextState
+          ),
+        });
+      },
+      stopPresenting: () => {
+        if (!isPresenter) return;
+        editor.updateDocumentSettings({
+          meta: withPresentationState(
+            editor.getDocumentSettings().meta as Record<string, unknown>,
+            {
+              ...presentationState,
+              active: false,
+              presenterId: null,
+            }
+          ),
+        });
+      },
+      togglePresentationLock: () => {
+        editor.updateDocumentSettings({
+          meta: withPresentationState(
+            editor.getDocumentSettings().meta as Record<string, unknown>,
+            {
+              ...presentationState,
+              active: true,
+              presenterId: presentationState.presenterId ?? deviceId,
+              currentPageId: presentationState.currentPageId ?? currentPageId,
+              isScreenLocked: !presentationState.isScreenLocked,
+            }
+          ),
+        });
+      },
+      setPreferredTextSize: (value: number) => {
+        const mapped = getMappedTextSize(value);
+        const updates = editor
+          .getSelectedShapes()
+          .filter((shape) => shape.type === "text")
+          .map((shape) => ({
+            id: shape.id,
+            type: "text" as const,
+            props: {
+              size: mapped.size,
+              scale: mapped.scale,
+            },
+          }));
+
+        editor.setStyleForNextShapes(DefaultSizeStyle, mapped.size);
+        if (updates.length > 0) {
+          editor.updateShapes(updates);
+        }
+      },
+    };
+
+    window.presentationControls = controls;
+    return () => {
+      delete window.presentationControls;
+    };
+  }, [
+    currentPageId,
+    deviceId,
+    editor,
+    isPresenter,
+    presentationState,
+  ]);
+
+  return <PresentationViewOverlay />;
+});
 
 // ─── AI assist for draw strokes ───────────────────────────────────────────────
 // When a freehand draw stroke is completed, optionally call an AI endpoint
@@ -352,73 +417,53 @@ interface TldrawCanvasProps {
 
 export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
   const isReadOnly = useNotesStore((s) => s.isReadOnly);
-  const [textSize, setTextSize] = useState(24);
+  const preferredTextSize = useNotesStore((s) => s.preferredTextSize);
+  const isPresentationView = useNotesStore((s) => s.isPresentationView);
+  const presentationState = useNotesStore((s) => s.presentationState);
   const isReadOnlyRef = useRef(isReadOnly);
-  const pendingTextSizeRef = useRef(textSize);
-
-  isReadOnlyRef.current = isReadOnly;
-  pendingTextSizeRef.current = textSize;
+  const pendingTextSizeRef = useRef(preferredTextSize);
 
   const store = useSync({
     uri: `${WS_BASE}/connect/${roomId}`,
     assets: ASSET_STORE,
   });
 
-  const handleTextSizeChange = useCallback((value: number) => {
-    const mapped = getMappedTextSize(value);
-    setTextSize(value);
-    pendingTextSizeRef.current = value;
-    const editor = (window as typeof window & { __pengoinEditor?: Editor })
-      .__pengoinEditor;
-    if (!editor) return;
+  useEffect(() => {
+    isReadOnlyRef.current = isReadOnly;
+  }, [isReadOnly]);
 
-    editor.setStyleForNextShapes(DefaultSizeStyle, mapped.size);
-
-    const updates = editor
-      .getSelectedShapes()
-      .filter((shape) => (shape as { type?: string }).type === "text")
-      .map((shape) => ({
-        id: shape.id,
-        type: "text" as const,
-        props: {
-          size: mapped.size,
-          scale: mapped.scale,
-        },
-      }));
-
-    if (updates.length > 0) {
-      editor.updateShapes(updates);
-    }
-  }, []);
+  useEffect(() => {
+    pendingTextSizeRef.current = preferredTextSize;
+  }, [preferredTextSize]);
 
   const components = useMemo<TLComponents>(
     () => ({
-      Toolbar: () => (
-        <CustomToolbar
-          isReadOnly={isReadOnly}
-          textSize={textSize}
-          onTextSizeChange={handleTextSizeChange}
-        />
-      ),
+      Toolbar: () => <CustomToolbar isReadOnly={isReadOnly} />,
+      StylePanel: isPresentationView ? null : CustomStylePanel,
       // Render our sidebar inside the tldraw context so useEditor() works
       InFrontOfTheCanvas: track(function InFrontOfTheCanvas() {
         return (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              zIndex: 300,
-              pointerEvents: "auto",
-            }}
-          >
-            <Sidebar />
-          </div>
+          <>
+            {!isPresentationView && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  zIndex: 300,
+                  pointerEvents: "auto",
+                }}
+              >
+                <Sidebar />
+              </div>
+            )}
+            <PresentationSync />
+          </>
         );
       }),
     }),
-    [handleTextSizeChange, isReadOnly, textSize]
+    [isPresentationView, isReadOnly]
   );
 
   const handleMount = useCallback((editor: Editor) => {
@@ -542,11 +587,13 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
 
   useEffect(() => {
     if (!editorRef.current) return;
-    editorRef.current.setCurrentTool(isReadOnly ? "hand" : "select");
-    if (isReadOnly) {
+    const shouldLockCanvas =
+      isReadOnly || (isPresentationView && presentationState.isScreenLocked);
+    editorRef.current.setCurrentTool(shouldLockCanvas ? "hand" : "select");
+    if (shouldLockCanvas) {
       editorRef.current.blur({ blurContainer: true });
     }
-  }, [isReadOnly]);
+  }, [isPresentationView, isReadOnly, presentationState.isScreenLocked]);
 
   if (store.status === "loading") {
     return (
@@ -586,10 +633,14 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
   return (
     <div className="absolute inset-0 w-full h-full">
       <div
-        className={`absolute inset-0 z-[250] ${isReadOnly ? "pointer-events-auto" : "pointer-events-none"}`}
+        className={`absolute inset-0 z-[250] ${
+          isReadOnly || (isPresentationView && presentationState.isScreenLocked)
+            ? "pointer-events-auto"
+            : "pointer-events-none"
+        }`}
         style={{
-          left: "var(--sidebar-width)",
-          bottom: 72,
+          left: isPresentationView ? 0 : "var(--sidebar-width)",
+          bottom: isPresentationView ? 0 : 72,
           top: 0,
         }}
       />
@@ -598,6 +649,7 @@ export default function TldrawCanvas({ roomId }: TldrawCanvasProps) {
         onMount={handleEditorMount}
         inferDarkMode
         components={components}
+        hideUi={isPresentationView}
       />
     </div>
   );

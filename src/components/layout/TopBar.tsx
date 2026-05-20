@@ -6,13 +6,28 @@ import { useNotesStore } from "@/store/useNotesStore";
 declare global {
   interface Window {
     exportWhiteboard?: (format?: "png" | "svg" | "pdf") => Promise<void>;
+    presentationControls?: {
+      startPresenting: () => void;
+      stopPresenting: () => void;
+      togglePresentationLock: () => void;
+      setPreferredTextSize: (value: number) => void;
+    };
   }
 }
 
 export default function TopBar() {
-  const { workspaceTitle, setWorkspaceTitle } = useNotesStore();
+  const {
+    workspaceTitle,
+    setWorkspaceTitle,
+    deviceId,
+    isPresentationView,
+    togglePresentationView,
+    presentationState,
+  } = useNotesStore();
   const isReadOnly = useNotesStore((s) => s.isReadOnly);
   const toggleReadOnly = useNotesStore((s) => s.toggleReadOnly);
+  const isPresentingController =
+    presentationState.active && presentationState.presenterId === deviceId;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -38,6 +53,8 @@ export default function TopBar() {
       setEditTitle(workspaceTitle);
     }
   };
+
+  if (isPresentationView) return null;
 
   return (
     <div className="h-14 border-b border-[#26262B] px-6 flex items-center justify-between bg-[#0F0F11] z-50 relative shrink-0">
@@ -103,6 +120,48 @@ export default function TopBar() {
           }`}
         >
           {isReadOnly ? "Read Only" : "Editing"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            isPresentingController
+              ? window.presentationControls?.stopPresenting()
+              : window.presentationControls?.startPresenting()
+          }
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border ${
+            isPresentingController
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              : "bg-[#202024] hover:bg-[#28282D] text-white border-[#2E2E33]"
+          }`}
+        >
+          {isPresentingController ? "Stop Presenting" : "Present"}
+        </button>
+
+        {presentationState.active && (
+          <button
+            type="button"
+            onClick={() => window.presentationControls?.togglePresentationLock()}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border ${
+              presentationState.isScreenLocked
+                ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
+                : "bg-[#202024] hover:bg-[#28282D] text-white border-[#2E2E33]"
+            }`}
+          >
+            {presentationState.isScreenLocked ? "Unlock Display" : "Lock Display"}
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={togglePresentationView}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border ${
+            isPresentationView
+              ? "bg-violet-500/10 text-violet-400 border-violet-500/20"
+              : "bg-[#202024] hover:bg-[#28282D] text-white border-[#2E2E33]"
+          }`}
+        >
+          Presentation View
         </button>
 
         <button
